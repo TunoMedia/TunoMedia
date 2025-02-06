@@ -9,7 +9,7 @@
     </div>
 </div>
 <div class="shrink-0 sm:flex sm:flex-col sm:items-end">
-    <audio id="{song.id}" controls>
+    <!-- <audio id="{song.id}" controls>
         <source src="/{song.id}.mp3" type="audio/mpeg">
-    </audio>
+    </audio> -->
 </div>

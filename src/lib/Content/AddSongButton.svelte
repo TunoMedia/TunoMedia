@@ -1,5 +1,5 @@
-<script>
-	let dialog = $state();
+<script lang="ts">
+	let dialog: any = $state();
 </script>
 
 <div>
@@ -14,7 +14,7 @@
 <dialog bind:this={dialog} class="rounded-2xl">
   <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
 
-    <div class="absolute top-0 right-0  flex pt-4 pr-2 m:-ml-10 sm:pr-4">
+    <div class="absolute top-0 right-0 flex pt-4 pr-2 m:-ml-10 sm:pr-4">
         <button 
             type="button" 
             class="relative rounded-md text-gray-300 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden"
