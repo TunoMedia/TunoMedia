@@ -33,6 +33,16 @@ export class MusicPlayer {
         this.#audio.play()
     }
 
+    togglePlayingSelectedSong(index: number) {
+        if (this.songPlayingIndex != index) {
+            this.songPlayingIndex = index
+            this.isPlaying = false
+            this.loadSong()
+        }
+
+        this.togglePlaying()
+    }
+
     previous() {
 		if (this.songPlayingIndex <= 0) return
 		this.songPlayingIndex -= 1

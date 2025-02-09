@@ -7,9 +7,9 @@
 
 <div class="px-4 py-12 sm:px-6 lg:px-8">
     <ul role="list" class="divide-y divide-gray-100">
-        {#each musicPlayer.songs as song}
-            <li class="flex justify-between gap-x-6 py-5 rounded-3xl hover:bg-gray-100">
-                <SongListing {song}/>
+        {#each musicPlayer.songs as song, index}
+            <li>
+                <SongListing {musicPlayer} {song} {index} />
             </li>
         {/each}
 
