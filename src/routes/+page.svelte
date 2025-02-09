@@ -3,7 +3,10 @@
     import Content from '$lib/Content/Content.svelte';
     import Footer from '$lib/Footer/Footer.svelte';
 
-    import songs from '../static/songs.json'; 
+    import { MusicPlayer } from '$lib/MusicPlayer.svelte';
+    import songs from '../static/songs.json';
+
+    const musicPlayer = new MusicPlayer(songs);
 </script>
 
 <div class="grid h-svh w-dvh grid-rows-[10]">
@@ -11,10 +14,10 @@
         <Header />
     </div>
     <div class="row-span-8 overflow-x-hidden overflow-y-scroll">
-        <Content {songs} />
+        <Content {musicPlayer} />
     </div>
     <div class="row-span-1">
-        <Footer />
+        <Footer {musicPlayer} />
     </div>
 </div>
 
