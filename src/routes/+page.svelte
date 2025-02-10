@@ -9,7 +9,7 @@
     const musicPlayer = new MusicPlayer(songs);
 </script>
 
-<div class="grid h-svh w-dvh grid-rows-[10]">
+<div class="grid h-dvh w-dvw grid-rows-[10]">
     <div class="row-span-1">
         <Header />
     </div>
