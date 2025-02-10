@@ -1,3 +1,8 @@
+<script lang="ts">
+	import ConnectWalletButton from "./ConnectWalletButton.svelte";
+
+</script>
+
 <div class="mx-auto flex mt-2 max-w-7xl items-center justify-between">
     <div class="flex">
       <a href="/" class="-m-1.5 p-1.5">
@@ -10,7 +15,7 @@
       <a href="#" class="text-sm/6 font-semibold text-gray-900">About us</a>
     </div> -->
 
-    <div class="flex flex-1 justify-end ">
-      <a href="#" class="text-sm/6 font-semibold text-gray-900">Connect wallet</a>
+    <div class="flex flex-1 justify-end">
+      <ConnectWalletButton />
     </div>
 </div>
