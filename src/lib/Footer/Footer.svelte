@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <div class="relative w-full sm:w-1/2 md:w-7/12 lg:w-4/6 ml-2">
+    <div class="relative w-4/6 sm:w-1/2 md:w-7/12 ml-2">
         <div class="bg-indigo-300 h-2 w-full rounded-lg"></div>
         <div class="bg-indigo-600 h-2 w-1/2 rounded-lg absolute top-0"></div>
     </div>
