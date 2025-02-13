@@ -1,21 +1,21 @@
 <script lang="ts">
     import { 
         createNetworkConfig, 
-        SuiClientProvider, 
+        IotaClientProvider, 
         WalletProvider, 
         ConnectButton 
-    } from "@mysten/dapp-kit";
+    } from "@iota/dapp-kit";
     import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-    import { getFullnodeUrl } from "@mysten/sui/client";
+    import { getFullnodeUrl } from "@iota/iota-sdk/client";
 	import { createElement } from "react";
     import { createRoot } from "react-dom/client";
 
-    import "@mysten/dapp-kit/dist/index.css";
+    import "@iota/dapp-kit/dist/index.css";
 
     const queryClient = new QueryClient();
     const { networkConfig } = createNetworkConfig({
+        localnet: { url: getFullnodeUrl('localnet') },
         testnet: { url: getFullnodeUrl('testnet') },
-        mainnet: { url: getFullnodeUrl('mainnet') },
     });
 
     let rootEl: HTMLElement
@@ -24,7 +24,7 @@
         let root = createRoot(rootEl)
         let provider = createElement(QueryClientProvider, { 
             client: queryClient,
-            children: createElement(SuiClientProvider, {
+            children: createElement(IotaClientProvider, {
                 networks: networkConfig,
                 defaultNetwork: 'testnet',
                 children: createElement(WalletProvider, {
