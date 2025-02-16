@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ConnectButton from "./ConnectButton.svelte";
+	import ConnectButton from "$lib/Wallet/ConnectButton.svelte";
 </script>
 
 <div class="flex h-full mx-8 md:mx-16 xl:mx-24 items-center justify-between">
