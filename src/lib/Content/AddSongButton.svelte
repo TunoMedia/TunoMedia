@@ -2,7 +2,7 @@
   import { getWalletProviderContext } from "$lib/Wallet/WalletProviderContext.svelte";
 
   let wallet = getWalletProviderContext();
-	let dialog: any = $state();
+  let dialog: any = $state();
 </script>
 
 <div>

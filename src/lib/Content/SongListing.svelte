@@ -1,7 +1,7 @@
 <script lang="ts">
     import { getMusicPlayerContext } from '$lib/MusicPlayer.svelte';
 
-	let { song, index } = $props();
+    let { song, index } = $props();
     let player = getMusicPlayerContext();
 </script>
 
