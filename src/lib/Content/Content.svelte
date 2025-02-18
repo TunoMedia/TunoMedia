@@ -1,15 +1,16 @@
 <script lang="ts">
     import AddSongButton from './AddSongButton.svelte';
     import SongListing from './SongListing.svelte';
+    import { getMusicPlayerContext } from '$lib/MusicPlayer.svelte';
 
-    let { musicPlayer } = $props();
+    let player = getMusicPlayerContext();
 </script>
 
 <div class="px-4 py-12 sm:px-6 lg:px-8">
     <ul role="list" class="divide-y divide-gray-100">
-        {#each musicPlayer.songs as song, index}
+        {#each player.songs as song, index}
             <li>
-                <SongListing {musicPlayer} {song} {index} />
+                <SongListing {song} {index} />
             </li>
         {/each}
 

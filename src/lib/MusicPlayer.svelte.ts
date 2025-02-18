@@ -1,3 +1,5 @@
+import { getContext, setContext } from "svelte";
+
 type SongObject = {
     id: string,
     title: string,
@@ -58,4 +60,14 @@ export class MusicPlayer {
         this.loadSong()
 		this.play()
 	}
+}
+
+const PLAYER_KEY = Symbol('PLAYER_KEY');
+
+export function setMusicPlayerContext(songs: SongObject[]) {
+    return setContext(PLAYER_KEY, new MusicPlayer(songs));
+}
+
+export function getMusicPlayerContext() {
+    return getContext<ReturnType<typeof setMusicPlayerContext>>(PLAYER_KEY);
 }
