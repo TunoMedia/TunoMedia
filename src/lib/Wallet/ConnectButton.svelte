@@ -2,12 +2,13 @@
     import { ConnectButton } from "@iota/dapp-kit";
     import "@iota/dapp-kit/dist/index.css";
 
-    import { initializeWalletProviderContext } from "./WalletProviderContext";
+    import { getWalletProviderContext } from "./WalletProviderContext.svelte";
 
     let rootEl: HTMLElement;
 
     $effect(() => {
-        let root = initializeWalletProviderContext(rootEl, ConnectButton);
+        let wallet = getWalletProviderContext();
+        let root = wallet.initializeWalletProvider(rootEl, ConnectButton);
 
         return () => root.unmount();
     });
