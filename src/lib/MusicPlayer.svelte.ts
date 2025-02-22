@@ -1,24 +1,23 @@
 import { getContext, setContext } from "svelte";
 
-type SongObject = {
-    id: string,
-    title: string,
+export type SongObject = {
+    object_id: string,
+    name: string,
     author: string,
 }
 
 export class MusicPlayer {
-	songs: SongObject[] = $state([]) as SongObject[];
+	#songs: SongObject[] = $state([]);
     isPlaying: boolean = $state(false);
 	songPlayingIndex = $state(0);
     #audio: HTMLAudioElement = $state(new Audio());
 
-    constructor(songs: SongObject[]) {
-        this.songs = songs;
-        this.loadSong()
+    addNewSong(song: SongObject) {
+        if (this.#songs.push(song) === 1) this.loadSong()
     }
 
     loadSong() {
-        this.#audio.src = `/${this.songs[this.songPlayingIndex].id}.mp3`;
+        this.#audio.src = `/${this.#songs[this.songPlayingIndex].object_id}.mp3`;
     }
 
     togglePlaying() {
@@ -54,7 +53,7 @@ export class MusicPlayer {
 	}
 
 	next() {
-		if (this.songPlayingIndex >= this.songs.length - 1) return
+		if (this.songPlayingIndex >= this.#songs.length - 1) return
 		this.songPlayingIndex += 1
 
         this.loadSong()
@@ -64,8 +63,8 @@ export class MusicPlayer {
 
 const PLAYER_KEY = Symbol('PLAYER_KEY');
 
-export function setMusicPlayerContext(songs: SongObject[]) {
-    return setContext(PLAYER_KEY, new MusicPlayer(songs));
+export function setMusicPlayerContext() {
+    return setContext(PLAYER_KEY, new MusicPlayer());
 }
 
 export function getMusicPlayerContext() {

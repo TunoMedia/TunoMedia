@@ -8,7 +8,7 @@
 <div class="group flex justify-between gap-x-6 py-5 rounded-3xl {player.songPlayingIndex === index ? "bg-indigo-300" : "hover:bg-indigo-100"}">
     <div class="flex min-w-0 gap-x-4 ml-4">
         <div class="min-w-0 flex-auto">
-            <p class="text-sm/6 font-semibold text-gray-900">{song.title}</p>
+            <p class="text-sm/6 font-semibold text-gray-900">{song.name}</p>
             <p class="mt-1 truncate text-xs/5 text-gray-500">{song.author}</p>
         </div>
     </div>

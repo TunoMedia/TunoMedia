@@ -3,6 +3,8 @@
 
   let wallet = getWalletProviderContext();
   let dialog: any = $state();
+
+  let currentAccount = $derived(wallet.currentAccount);
 </script>
 
 <div>
@@ -29,7 +31,7 @@
     </button>
   </div>
 
-  {#if wallet.currentAccount}
+  {#if currentAccount}
     <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-sm">
         <form class="space-y-6" action="#" method="POST">
@@ -55,7 +57,9 @@
           </div>
     
           <div>
-            <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Add</button>
+            <button type="submit" onclick={()=> {
+              wallet.signPersonalMessage?.({ message: new TextEncoder().encode("TODO"), account: currentAccount })
+            }} class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Add</button>
           </div>
         </form>
       </div>
