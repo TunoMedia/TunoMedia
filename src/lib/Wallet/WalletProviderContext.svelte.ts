@@ -4,10 +4,10 @@ import {
     useCurrentAccount, 
     useIotaClient,
     useSignPersonalMessage, 
-    WalletProvider, 
+    WalletProvider,
 } from "@iota/dapp-kit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getFullnodeUrl, IotaClient } from "@iota/iota-sdk/client";
+import { getFullnodeUrl, type IotaClient } from "@iota/iota-sdk/client";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 import React from "react";
@@ -29,7 +29,7 @@ export class IotaWalletProvider {
     client: IotaClient | null = $state(null);
     signPersonalMessage: IotaSignPersonalMessageMethod | undefined = $state();
 
-    initializeWalletProvider(rootEl: HTMLElement, ConnectButton: any) {
+    initializeWalletProvider(rootEl: HTMLElement, connectButton: any) {
         if (this.#initialized) return;
     
         this.#root = createRoot(rootEl);
@@ -41,7 +41,7 @@ export class IotaWalletProvider {
                     defaultNetwork: 'testnet',
                     children: createElement(WalletProvider, {
                         children: [
-                          createElement(ConnectButton, { key: 'ConnectButton' }),
+                          createElement(connectButton, { key: 'ConnectButton' }),
                           createElement(WalletHooksBridge, {
                             key: "WalletHooksBridge",
                             onAccountChange: (account) => this.currentAccount = account,
