@@ -71,17 +71,18 @@ export NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 $ANDROID_HOME/ndk)"
 
 #### Development
 
-Generate an Android Studio project and start a development instance:
+Start a development instance:
 
 ```bash
-cargo tauri android init
 cargo tauri android dev
 ```
 
 #### Building as APK
 
-To create a production version of the app:
+Once you've setup [Android Code Signing](https://v2.tauri.app/distribute/sign/android/), create a production version of the app:
 
 ```bash
 cargo tauri android build --apk
 ```
+
+
