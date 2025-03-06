@@ -5,9 +5,8 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.97"
-axum = "0.8.1"
-rmpv = { version = "1.3.0", features = ["with-serde"] }
+futures-util = "0.3.31"
 serde = { version = "1.0.218", features = ["derive"] }
-socketioxide = "0.16.1"
 tokio = { version = "1.43.0", features = ["full"] }
+tokio-tungstenite = "0.26.2"
 toml = "0.8.20"

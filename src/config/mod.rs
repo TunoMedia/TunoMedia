@@ -5,25 +5,12 @@ use std::fs;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub server: ServerConfig,
-    pub stronghold: StrongholdConfig,
-    pub iota: IotaConfig,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct StrongholdConfig {
-    pub snapshot_path: String,
-    pub password: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct IotaConfig {
-    pub node_url: String,
 }
 
 pub fn load_config() -> Result<Config> {
