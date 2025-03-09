@@ -1,7 +1,7 @@
 <script lang="ts">
     import AddSongButton from './AddSongButton.svelte';
     import SongListing from './SongListing.svelte';
-    import { getMusicPlayerContext, type SongObject } from '$lib/MusicPlayer.svelte';
+    import { getMusicPlayerContext, type SongObject } from '$lib/Player/MusicPlayer.svelte';
     import { getWalletProviderContext } from '$lib/Wallet/WalletProviderContext.svelte';
 
     let player = getMusicPlayerContext();
