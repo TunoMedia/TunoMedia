@@ -2,14 +2,6 @@
     import Header from '$lib/Header/Header.svelte';
     import Content from '$lib/Content/Content.svelte';
     import Footer from '$lib/Footer/Footer.svelte';
-
-    import WebSocket from '@tauri-apps/plugin-websocket';
-
-    WebSocket.connect('ws://127.0.0.1:8080').then(ws => {
-        ws.addListener(msg => console.log('Received Message:', msg));
-        ws.send('Hello World!').then(() => ws.disconnect())
-    })
-
 </script>
 
 <div class="grid h-dvh w-dvw grid-rows-[10]">
