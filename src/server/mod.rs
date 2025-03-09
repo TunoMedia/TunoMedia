@@ -1,9 +1,9 @@
-use futures_util::{StreamExt, SinkExt};
+use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::{
     accept_async,
-    tungstenite::protocol::Message,
+    tungstenite::{protocol::Message, Utf8Bytes},
 };
 
 use anyhow::Result;
@@ -59,27 +59,58 @@ impl TunoServer {
             
             match msg {
                 Message::Text(text) => {
-                    println!("Received text message: {}", text);
-                    
-                    // Echo the message
-                    if let Err(e) = ws_sender.send(Message::Text(text)).await {
+                    let res = Self::handle_message(text).to_string();
+                    if let Err(e) = ws_sender.send(Message::Text(res.into())).await {
                         println!("Error sending response: {}", e);
                         break;
                     }
-                }
+                },
                 Message::Close(_) => {
                     println!("WebSocket connection closed by client: {}", peer);
                     break;
-                }
-                _ => {
-                    // Ignore other message types
-                }
+                },
+                _ => ()
             }
         }
         
         println!("WebSocket connection closed: {}", peer);
         
         Ok(())
+    }
+
+    fn handle_message(text: Utf8Bytes) -> serde_json::Value {
+        println!("Received text message: {}", text);
+                    
+        match serde_json::from_str::<serde_json::Value>(&text) {
+            Ok(json) => Self::handle_request(json),
+            Err(_) => serde_json::json!({
+                "status": "error",
+                "message": "Invalid JSON"
+            })
+        }
+    }
+
+    fn handle_request(json: serde_json::Value) -> serde_json::Value {
+        match json.get("req").and_then(|a| a.as_str()) {
+            Some(req) if req == "echo" => Self::handle_echo(json),
+            _ => serde_json::json!({
+                "status": "error",
+                "message": "Unknown request"
+            })
+        }
+    }
+
+    fn handle_echo(json: serde_json::Value) -> serde_json::Value {
+        match json.get("message").and_then(|a| a.as_str()) {
+            Some(message) => serde_json::json!({
+                "status": "success",
+                "message": message
+            }),
+            None => serde_json::json!({
+                "status": "error",
+                "message": "Invalid echo request"
+            })
+        }
     }
 
 }

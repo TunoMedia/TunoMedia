@@ -5,12 +5,18 @@ use std::fs;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub server: ServerConfig,
+    pub storage: StorageConfig,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StorageConfig {
+    pub path: String,
 }
 
 pub fn load_config() -> Result<Config> {
