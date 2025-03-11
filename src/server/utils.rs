@@ -5,7 +5,7 @@ pub fn error_response(message: &str) -> Message {
     Message::Text(
         serde_json::json!({
             "status": "error",
-            "message": message
+            "error": message
         }).to_string().into()
     )
 }
@@ -21,5 +21,5 @@ pub fn success_response(message: &str) -> Message {
 
 // TODO: get object_id as bytes
 pub fn get_file(object_id: &str) -> Result<Vec<u8>, std::io::Error> {
-    fs::read(format!("./media/{object_id}"))
+    fs::read(format!("./media/{object_id}.mp3"))
 }
