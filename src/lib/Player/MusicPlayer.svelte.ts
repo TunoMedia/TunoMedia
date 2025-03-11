@@ -1,4 +1,5 @@
 import { getContext, setContext } from "svelte";
+import { TunoSocket } from "./TunoSocket.svelte";
 
 export type SongObject = {
     object_id: string,
@@ -7,17 +8,35 @@ export type SongObject = {
 }
 
 export class MusicPlayer {
-	#songs: SongObject[] = $state([]);
+	#songs: SongObject[] = [];
     isPlaying: boolean = $state(false);
 	songPlayingIndex = $state(0);
-    #audio: HTMLAudioElement = $state(new Audio());
+
+    #socket: TunoSocket = new TunoSocket("ws://localhost:4114");
+    #audio: HTMLAudioElement = new Audio();
+    #mediaSource: MediaSource = new MediaSource();
+    #sourceBuffer: SourceBuffer | null = null;
+
+    constructor() {
+        this.#mediaSource.addEventListener('sourceopen', () => {
+            this.#sourceBuffer = this.#mediaSource.addSourceBuffer('audio/mpeg');
+        })
+
+        this.#audio.src = URL.createObjectURL(this.#mediaSource);
+    }
 
     addNewSong(song: SongObject) {
         if (this.#songs.push(song) === 1) this.loadSong()
     }
 
     loadSong() {
-        this.#audio.src = `/${this.#songs[this.songPlayingIndex].object_id}.mp3`;
+        this.#socket.stream(this.#songs[this.songPlayingIndex].object_id)
+            .then(blob => blob.arrayBuffer())
+            .then(buf => {
+                if (!this.#sourceBuffer) return console.error("sourceBuffer do not exist");
+                this.#sourceBuffer.appendBuffer(buf)
+            })
+            .catch(error => console.error(error));
     }
 
     togglePlaying() {
