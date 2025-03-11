@@ -14,14 +14,19 @@ export class MusicPlayer {
 
     #socket: TunoSocket = new TunoSocket("ws://localhost:4114");
     #audio: HTMLAudioElement = new Audio();
-    #mediaSource: MediaSource = new MediaSource();
+    #mediaSource: MediaSource | null = null;
     #sourceBuffer: SourceBuffer | null = null;
 
-    constructor() {
-        this.#mediaSource.addEventListener('sourceopen', () => {
-            this.#sourceBuffer = this.#mediaSource.addSourceBuffer('audio/mpeg');
-        })
+    #resetMediaSource() {
+        if (this.#mediaSource) {
+            this.#mediaSource.endOfStream();
+            URL.revokeObjectURL(this.#audio.src);
+        }
 
+        this.#mediaSource = new MediaSource();
+        this.#mediaSource.addEventListener('sourceopen', () => {
+            this.#sourceBuffer = this.#mediaSource!.addSourceBuffer('audio/mpeg');
+        })
         this.#audio.src = URL.createObjectURL(this.#mediaSource);
     }
 
@@ -30,6 +35,7 @@ export class MusicPlayer {
     }
 
     loadSong() {
+        this.#resetMediaSource();
         this.#socket.stream(this.#songs[this.songPlayingIndex].object_id)
             .then(blob => blob.arrayBuffer())
             .then(buf => {
