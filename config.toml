@@ -1,4 +1,5 @@
 [server]
+cert_dir = "/etc/letsencrypt/live/tuno.media/"
 host = "0.0.0.0"
 port = 4114
 

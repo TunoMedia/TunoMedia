@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use anyhow::Result;
-use std::fs;
+use std::{fs, path::PathBuf};
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -10,6 +10,7 @@ pub struct Config {
 
 #[derive(Debug, Deserialize)]
 pub struct ServerConfig {
+    pub cert_dir: PathBuf,
     pub host: String,
     pub port: u16,
 }

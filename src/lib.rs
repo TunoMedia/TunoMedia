@@ -9,6 +9,7 @@ pub async fn run() -> Result<()> {
     let server = server::TunoServer::new(
         config.server.host,
         config.server.port,
+        config.server.cert_dir
     );
 
     server.run().await?;
