@@ -10,7 +10,7 @@ pub struct Config {
 
 #[derive(Debug, Deserialize)]
 pub struct ServerConfig {
-    pub cert_dir: PathBuf,
+    pub cert_dir: Option<PathBuf>,
     pub host: String,
     pub port: u16,
 }

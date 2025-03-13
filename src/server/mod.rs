@@ -1,10 +1,14 @@
-use tokio::net::{TcpListener, TcpStream};
 use futures_util::{SinkExt, StreamExt};
 use std::{net::SocketAddr, path::PathBuf};
 use native_tls::Identity;
 use anyhow::Result;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::{TcpListener, TcpStream}
+};
 use tokio_tungstenite::{
     accept_async,
+    WebSocketStream,
     tungstenite::{Message, Utf8Bytes},
 };
 
@@ -19,43 +23,63 @@ mod utils;
 pub struct TunoServer {
     host: String,
     port: u16,
+    identity: Option<TunoIdentity>
+}
+
+#[derive(Clone)]
+struct TunoIdentity {
     cert_path: PathBuf,
     key_path: PathBuf,
 }
 
 impl TunoServer {
-    pub fn new(host: String, port: u16, cert_dir: PathBuf) -> Self {
+    pub fn new(host: String, port: u16, cert_dir: Option<PathBuf>) -> Self {
         Self {
             host,
             port,
-            cert_path: cert_dir.join("fullchain.pem"),
-            key_path: cert_dir.join("privkey.pem")
+            identity: cert_dir.and_then(|dir| 
+                Some(TunoIdentity {
+                    cert_path: dir.join("fullchain.pem"),
+                    key_path: dir.join("privkey.pem")
+                })
+            )
         }
+    }
+
+    fn create_tls_acceptor(cert_path: &PathBuf, key_path: &PathBuf) -> Result<tokio_native_tls::TlsAcceptor> {
+        if !cert_path.exists() {
+            return Err(anyhow::anyhow!("Certificate file not found: {:?}", cert_path));
+        }
+
+        if !key_path.exists() {
+            return Err(anyhow::anyhow!("Certificate file not found: {:?}", key_path));
+        }
+
+        let cert = Identity::from_pkcs8(
+            &std::fs::read(&cert_path)?,
+            &std::fs::read(&key_path)?
+        )?;
+
+        Ok(
+            tokio_native_tls::TlsAcceptor::from(
+                native_tls::TlsAcceptor::builder(cert).build()?
+            )
+        )
     }
 
     pub async fn run(&self) -> Result<()> {
         let addr = format!("{}:{}", self.host, self.port);
         let listener = TcpListener::bind(&addr).await?;
 
-        if !self.cert_path.exists() {
-            return Err(anyhow::anyhow!("Certificate file not found: {:?}", self.cert_path));
-        }
-
-        if !self.key_path.exists() {
-            return Err(anyhow::anyhow!("Private key file not found: {:?}", self.key_path));
-        }
-
-        let cert_data = std::fs::read(&self.cert_path)?;
-        let key_data = std::fs::read(&self.key_path)?;
-
-        let cert = Identity::from_pkcs8(&cert_data, &key_data)?;
-        let tls_acceptor = tokio_native_tls::TlsAcceptor::from(
-            native_tls::TlsAcceptor::builder(cert).build()?
+        let tls_acceptor = self.identity.as_ref().and_then(
+            |TunoIdentity { cert_path, key_path }|
+                Self::create_tls_acceptor(cert_path, key_path).ok()
         );
 
-        println!("Secure WebSocket server listening on: wss://{}", addr);
-        println!("Using certificate: {:?}", self.cert_path);
-        println!("Using private key: {:?}", self.key_path);
+        match tls_acceptor {
+            Some(_) => println!("Secure WebSocket server listening on: wss://{}", addr),
+            None => println!("WebSocket server listening on: ws://{}", addr)
+        }
 
         while let Ok((stream, peer)) = listener.accept().await {
             let tls_acceptor = tls_acceptor.clone();
@@ -72,14 +96,31 @@ impl TunoServer {
     async fn handle_connection(
         stream: TcpStream,
         peer: SocketAddr,
-        tls_acceptor: tokio_native_tls::TlsAcceptor
+        tls_acceptor: Option<tokio_native_tls::TlsAcceptor>
     ) -> Result<()> {
-        let tls_stream = tls_acceptor.accept(stream).await?;
-        let ws_stream = accept_async(tls_stream).await?;
+        match tls_acceptor {
+            Some(acceptor) => {
+                let tls_stream = acceptor.accept(stream).await?;
+                let ws_stream = accept_async(tls_stream).await?;
+                
+                println!("Secure connection established with: {}", peer);
+                Self::process_websocket(ws_stream, peer).await
+            },
+            None => {
+                let ws_stream = accept_async(stream).await?;
+                
+                println!("Standard connection established with: {}", peer);
+                Self::process_websocket(ws_stream, peer).await
+            }
+        }
+    }
+
+    async fn process_websocket<S>(ws_stream: WebSocketStream<S>, peer: SocketAddr) -> Result<()>
+    where
+        S: AsyncRead + AsyncWrite + Unpin,
+    {
         let (mut ws_sender, mut ws_receiver) = ws_stream.split();
-        println!("WebSocket connection established with: {}", peer);
         
-        // Process incoming messages
         while let Some(msg) = ws_receiver.next().await {
             let msg = match msg {
                 Ok(msg) => msg,
@@ -97,18 +138,18 @@ impl TunoServer {
                     }
                 },
                 Message::Close(_) => {
-                    println!("WebSocket connection closed by client: {}", peer);
+                    println!("Connection closed by client: {}", peer);
                     break;
                 },
                 _ => ()
             }
         }
         
-        println!("WebSocket connection closed: {}", peer);
+        println!("Connection closed: {}", peer);
         
         Ok(())
     }
-
+    
     fn handle_message(text: Utf8Bytes) -> Message {
         println!("Received text message: {}", text);
                     
