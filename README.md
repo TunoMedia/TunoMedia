@@ -5,11 +5,9 @@ Dependencies for Ubuntu:
 sudo apt install libssl-dev pkg-config
 ```
 
-Run debug version:
+In case it doesn't work with letsencrypt auto-generated files:
 ```sh
 sudo openssl pkcs8 -topk8 -nocrypt -in /etc/letsencrypt/live/tuno.media/privkey.pem -out /etc/letsencrypt/live/tuno.media/privkey-pkcs8.pem
-cargo build
-sudo ./target/debug/tuno-cli
 ```
 
 ## Deploy on prod as a systemd service
@@ -47,7 +45,7 @@ sudo chmod 600 /opt/tuno-distributor/certs/*.pem
 
 5. Create a configuration file
 ```sh
-sudo cp ./config.toml /opt/tuno-distributor/config.toml
+sudo cp ./config.toml /opt/tuno-distributor
 ```
 
 6. Set proper permissions
@@ -57,7 +55,7 @@ sudo chown -R tuno-distributor:tuno-distributor /opt/tuno-distributor
 
 7. Create a systemd service file
 ```sh
-/etc/systemd/system/tuno-distributor.service
+sudo cp ./tuno-distributor.service /etc/systemd/system
 ```
 
 8. Enable and start the service
@@ -68,14 +66,5 @@ sudo systemctl start tuno-distributor.service
 ```
 
 #### Manual Testing
-If you want to test the service manually before enabling the systemd service:
-```sh
-# Switch to the tuno-distributor user
-sudo -u tuno-distributor bash
 
-# Run the application with the config path set
-CONFIG_PATH=/opt/tuno-distributor/config/config.toml /opt/tuno-distributor/bin/tuno-cli
-
-# Exit the tuno-distributor user shell
-exit
-```
+Check logs with `sudo journalctl -u tuno-distributor.service`
