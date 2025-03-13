@@ -1,7 +1,7 @@
 [server]
-cert_dir = "/etc/letsencrypt/live/tuno.media/"
+cert_dir = "/opt/tuno-distributor/certs/"
 host = "0.0.0.0"
 port = 4114
 
 [storage]
-path = "./media/"
+path = "/opt/tuno-distributor/media/"

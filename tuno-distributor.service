@@ -1,0 +1,21 @@
+[Unit]
+Description=Tuno Distributor Service
+After=network.target
+
+[Service]
+Type=simple
+User=tuno-distributor
+Group=tuno-distributor
+Environment="CONFIG_PATH=/opt/tuno-distributor/config.toml"
+ExecStart=/opt/tuno-distributor/tuno-cli
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=/opt/tuno-distributor
+
+PrivateTmp=true
+ProtectSystem=full
+NoNewPrivileges=true
+ReadWritePaths=/opt/tuno-distributor/media
+
+[Install]
+WantedBy=multi-user.target
