@@ -1,22 +1,22 @@
-use tokio_tungstenite::tungstenite::Message;
-use std::fs;
+use tonic::transport::{Identity, ServerTlsConfig};
+use std::{fs, path::PathBuf};
+use anyhow::Result;
 
-pub fn error_response(message: &str) -> Message {
-    Message::Text(
-        serde_json::json!({
-            "status": "error",
-            "error": message
-        }).to_string().into()
-    )
-}
+pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<ServerTlsConfig> {
+    if !cert_path.exists() {
+        return Err(anyhow::anyhow!("Certificate file not found: {:?}", cert_path));
+    }
 
-pub fn success_response(message: &str) -> Message {
-    Message::Text(
-        serde_json::json!({
-            "status": "success",
-            "message": message
-        }).to_string().into()
-    )
+    if !key_path.exists() {
+        return Err(anyhow::anyhow!("Certificate file not found: {:?}", key_path));
+    }
+
+    let cert_data = fs::read(&cert_path)?;
+    let key_data = fs::read(&key_path)?;
+
+    let identity = Identity::from_pem(cert_data, key_data);
+    
+    Ok(ServerTlsConfig::new().identity(identity))
 }
 
 // TODO: get object_id as bytes
