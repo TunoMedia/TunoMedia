@@ -1207,6 +1207,7 @@ name = "tuno-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "log",
  "prost",
  "serde",
  "serde_json",

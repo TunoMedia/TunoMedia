@@ -1,3 +1,4 @@
+use log::{info, trace};
 use tonic::{transport::Server, Request, Response, Status};
 use std::{net::SocketAddr, path::PathBuf};
 use anyhow::Result;
@@ -11,7 +12,7 @@ pub mod tuno {
 }
 
 use tuno::{
-    tuno_server::{Tuno, TunoServer as TunoGrpcServer},
+    tuno_server::{Tuno, TunoServer},
     EchoRequest, EchoResponse,
     StreamRequest, StreamResponse,
 };
@@ -22,22 +23,18 @@ pub struct TunoService {}
 impl Tuno for TunoService {
     async fn echo(&self, request: Request<EchoRequest>) -> Result<Response<EchoResponse>, Status> {
         let message = request.into_inner().message;
-        println!("Received echo request: {:?}", message);
+        trace!("Received echo request: {:?}", message);
         
         if message.is_empty() {
             return Err(Status::invalid_argument("Invalid echo request: message is empty"));
         }
         
-        let response = EchoResponse {
-            message,
-        };
-        
-        Ok(Response::new(response))
+        Ok(Response::new(EchoResponse { message }))
     }
     
     async fn stream(&self, request: Request<StreamRequest>) -> Result<Response<StreamResponse>, Status> {
         let object_id = request.into_inner().object_id;
-        println!("Received stream request: {:?}", object_id);
+        trace!("Received stream request: {:?}", object_id);
         
         if object_id.is_empty() {
             return Err(Status::invalid_argument("Invalid stream request: object_id is empty"));
@@ -50,7 +47,7 @@ impl Tuno for TunoService {
     }
 }
 
-pub struct TunoServer {
+pub struct TunoGrpcServer {
     host: String,
     port: u16,
     identity: Option<TunoIdentity>
@@ -62,7 +59,7 @@ struct TunoIdentity {
     key_path: PathBuf,
 }
 
-impl TunoServer {
+impl TunoGrpcServer {
     pub fn new(host: String, port: u16, cert_dir: Option<PathBuf>) -> Self {
         Self {
             host,
@@ -83,16 +80,16 @@ impl TunoServer {
         if let Some(TunoIdentity { cert_path, key_path }) = &self.identity {
             let tls_config = load_tls_config(cert_path, key_path)?;
 
-            println!("Secure gRPC server listening on: https://{}", addr);
+            info!("Secure gRPC server listening on: https://{}", addr);
             Server::builder()
                 .tls_config(tls_config)?
-                .add_service(TunoGrpcServer::new(service))
+                .add_service(TunoServer::new(service))
                 .serve(addr)
                 .await?;
         } else {
-            println!("gRPC server listening on: http://{}", addr);
+            info!("gRPC server listening on: http://{}", addr);
             Server::builder()
-                .add_service(TunoGrpcServer::new(service))
+                .add_service(TunoServer::new(service))
                 .serve(addr)
                 .await?;
         }
