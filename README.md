@@ -85,5 +85,18 @@ Once you've setup [Android Code Signing](https://v2.tauri.app/distribute/sign/an
 ```bash
 cargo tauri android build --apk
 ```
+# Generating protobuf client scripts
 
+protoc plugins required:
+- [protoc-gen-js](http://aur.archlinux.org/packages/protoc-gen-js-bin)
+- [protoc-gen-grpc-web](http://aur.archlinux.org/packages/protoc-gen-grpc-web)
 
+```sh
+cd /tmp
+wget https://github.com/grpc/grpc-web/releases/download/1.5.0/protoc-gen-grpc-web-1.5.0-linux-x86_64
+sudo install -Dm755 protoc-gen-grpc-web-1.5.0-linux-x86_64 /usr/bin/protoc-gen-grpc-web
+```
+
+```sh
+protoc -I tuno/proto tuno/proto/*.proto --js_out=import_style=commonjs:./src/lib/proto --grpc-web_out=import_style=commonjs,mode=grpcweb:./src/lib/proto
+```
