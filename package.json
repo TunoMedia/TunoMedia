@@ -14,6 +14,7 @@
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.3",
+		"@protobuf-ts/plugin": "^2.9.6",
 		"@sveltejs/adapter-static": "^3.0.8",
 		"@sveltejs/kit": "^2.9.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
@@ -37,6 +38,7 @@
 	"dependencies": {
 		"@iota/dapp-kit": "^0.4.0",
 		"@iota/iota-sdk": "^0.5.0",
+		"@protobuf-ts/grpcweb-transport": "^2.9.6",
 		"@tanstack/react-query": "^5.66.0",
 		"@types/react": "^19.0.8",
 		"@types/react-dom": "^19.0.3",

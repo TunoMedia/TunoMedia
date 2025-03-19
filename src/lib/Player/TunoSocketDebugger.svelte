@@ -1,11 +1,11 @@
 <script lang="ts">
     import { TunoSocket } from "./TunoSocket.svelte";
 
-    const client = new TunoSocket("ws://localhost:4114");
+    const client = new TunoSocket("http://localhost:4114");
 
     let message = $state("");
     let echo_message: Promise<string> = $state(Promise.resolve(""));
-    let stream_resp: Promise<Blob> = $state(Promise.resolve(new Blob()));
+    let stream_resp: Promise<Uint8Array> = $state(Promise.resolve(new Uint8Array()));
 </script>
 
 <div>
