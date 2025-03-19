@@ -12,7 +12,7 @@ export class MusicPlayer {
     isPlaying: boolean = $state(false);
 	songPlayingIndex = $state(0);
 
-    #socket: TunoSocket = new TunoSocket("ws://localhost:4114");
+    #socket: TunoSocket = new TunoSocket();
     #audio: HTMLAudioElement = new Audio();
     #mediaSource: MediaSource | null = null;
     #sourceBuffer: SourceBuffer | null = null;

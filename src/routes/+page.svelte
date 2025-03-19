@@ -6,10 +6,11 @@
 </script>
 
 <div class="grid h-dvh w-dvw grid-rows-[10]">
-    <!-- TODO: Appear with debug env variable -->
-    <!-- <div class="row-span-3 bg-green-300 content-center">
-        <TunoSocketDebugger />
-    </div> -->
+    {#if import.meta.env.MODE === "development"}
+        <div class="row-span-3 bg-green-300 content-center">
+            <TunoSocketDebugger />
+        </div>
+    {/if}
 
     <div class="row-span-1">
         <Header />

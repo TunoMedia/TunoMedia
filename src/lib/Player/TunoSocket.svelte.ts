@@ -11,7 +11,7 @@ export class TunoSocket {
     })
     last_response: string | null = $state(null)
 
-    constructor(url: string = "ws://tuno.media:4114") {
+    constructor(url: string = "wss://tuno.media:4114") {
         this.#ws = new WebSocket(url)
         this.#ws.onopen = this.#onopen;
         this.#ws.onclose = this.#onclose;

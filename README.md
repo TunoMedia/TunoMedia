@@ -25,6 +25,7 @@ npm run build
 Make sure the production files are readable by nginx:
 
 ```bash
+sudo rm -rf /opt/tuno
 sudo cp -r ./build /opt/tuno
 ```
 
