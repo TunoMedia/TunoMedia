@@ -1,0 +1,26 @@
+services:
+  server:
+    build: .
+    ports:
+      - 127.0.0.1:4114:4114
+    environment:
+      - RUST_LOG=trace
+    secrets:
+      - cert
+      - key
+      
+  envoy:
+    image: envoyproxy/envoy:v1.33-latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config/envoy.yaml:/etc/envoy/envoy.yaml
+    command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml -l info
+    depends_on:
+      - server
+
+secrets:
+  cert:
+    file: /opt/tuno-distributor/certs/fullchain.pem
+  key:
+    file: /opt/tuno-distributor/certs/privkey.pem
