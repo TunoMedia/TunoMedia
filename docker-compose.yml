@@ -9,7 +9,7 @@ services:
   envoy:
     image: envoyproxy/envoy:v1.28-latest
     ports:
-      - "8080:8080"
+      - "4115:8080"
     volumes:
       - ./config/envoy.yaml:/etc/envoy/envoy.yaml
     command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml -l info

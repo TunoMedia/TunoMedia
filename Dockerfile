@@ -1,8 +1,6 @@
-FROM rust:1.85.1-alpine3.21 as builder
+FROM rust:1.85.1-slim-bookworm AS builder
 
-RUN apk update && apk upgrade
-
-RUN apk add --no-cache musl-dev protobuf
+RUN apt-get update -y && apt-get install protobuf-compiler -y
 
 WORKDIR /tuno-cli
 
@@ -17,7 +15,7 @@ COPY ./tuno ./tuno
 
 RUN cargo build --release
 
-FROM alpine:3.21
+FROM debian:bookworm-slim
 
 WORKDIR /tuno-cli
 
