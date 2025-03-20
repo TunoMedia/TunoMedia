@@ -1,6 +1,8 @@
-FROM rust:1.85.1-bullseye as builder
+FROM rust:1.85.1-alpine3.21 as builder
 
-RUN apt-get update -y && apt-get install protobuf-compiler -y
+RUN apk update && apk upgrade
+
+RUN apk add --no-cache musl-dev protobuf
 
 WORKDIR /tuno-cli
 
@@ -15,7 +17,7 @@ COPY ./tuno ./tuno
 
 RUN cargo build --release
 
-FROM debian:bullseye-slim
+FROM alpine:3.21
 
 WORKDIR /tuno-cli
 

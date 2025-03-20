@@ -12,6 +12,7 @@ pub async fn run() -> Result<()> {
         config.server.cert_dir
     );
 
+    env_logger::init();
     server.run().await?;
     
     Ok(())

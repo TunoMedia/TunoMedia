@@ -3,6 +3,8 @@ services:
     build: .
     ports:
       - 127.0.0.1:4114:4114
+    environment:
+      - RUST_LOG=trace
       
   envoy:
     image: envoyproxy/envoy:v1.28-latest
