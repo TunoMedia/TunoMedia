@@ -55,7 +55,7 @@ sudo chown -R tuno-distributor:tuno-distributor /opt/tuno-distributor
 
 7. Create a systemd service file
 ```sh
-sudo cp ./tuno-distributor.service /etc/systemd/system
+sudo cp ./config/tuno-distributor.service /etc/systemd/system
 ```
 
 8. Enable and start the service
