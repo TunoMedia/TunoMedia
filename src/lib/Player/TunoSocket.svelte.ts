@@ -4,9 +4,12 @@ import { TunoClient } from "$lib/proto/tuno.client";
 export class TunoSocket {
     #client: TunoClient | null = null
 
-    constructor(baseUrl: string = "grpc://tuno.media:4114") {
+    constructor(baseUrl: string = "https://tuno.media:4114") {
         this.#client = new TunoClient(
-            new GrpcWebFetchTransport({ baseUrl })
+            new GrpcWebFetchTransport({
+                baseUrl,
+                format: "binary"
+            })
         );
     }
 

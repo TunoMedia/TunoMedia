@@ -37,7 +37,6 @@ export class MusicPlayer {
     loadSong() {
         this.#resetMediaSource();
         this.#socket.stream(this.#songs[this.songPlayingIndex].object_id)
-            .then(blob => blob.arrayBuffer())
             .then(buf => {
                 if (!this.#sourceBuffer) return console.error("sourceBuffer do not exist");
                 this.#sourceBuffer.appendBuffer(buf)
