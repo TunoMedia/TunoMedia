@@ -2,7 +2,7 @@
 
 Dependencies for Ubuntu:
 ```sh
-sudo apt install libssl-dev pkg-config
+sudo apt install libssl-dev pkg-config protobuf-compiler
 ```
 
 In case it doesn't work with letsencrypt auto-generated files:

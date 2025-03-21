@@ -7,6 +7,7 @@ Type=simple
 User=tuno-distributor
 Group=tuno-distributor
 Environment="CONFIG_PATH=/opt/tuno-distributor/config.toml"
+Environment="RUST_LOG=trace"
 ExecStart=/opt/tuno-distributor/tuno-cli
 Restart=on-failure
 RestartSec=5
