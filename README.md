@@ -68,3 +68,8 @@ sudo systemctl start tuno-distributor.service
 #### Manual Testing
 
 Check logs with `sudo journalctl -u tuno-distributor.service`
+
+Test grpc implementation with `grpcui`:
+```sh
+grpcui -plaintext "localhost:4114"
+```

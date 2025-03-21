@@ -1,51 +1,13 @@
-use log::{info, trace};
-use tonic::{transport::Server, Request, Response, Status};
-use std::{net::SocketAddr, path::PathBuf};
+use log::info;
+use tonic::transport::Server;
+use std::path::PathBuf;
 use anyhow::Result;
 
+mod tuno;
+use tuno::proto::tuno_server::TunoServer;
+
 mod utils;
-use utils::{get_file, load_tls_config};
-
-// Proto-generated code
-pub mod tuno {
-    tonic::include_proto!("tuno");
-}
-
-use tuno::{
-    tuno_server::{Tuno, TunoServer},
-    EchoRequest, EchoResponse,
-    StreamRequest, StreamResponse,
-};
-
-pub struct TunoService {}
-
-#[tonic::async_trait]
-impl Tuno for TunoService {
-    async fn echo(&self, request: Request<EchoRequest>) -> Result<Response<EchoResponse>, Status> {
-        let message = request.into_inner().message;
-        trace!("Received echo request: {:?}", message);
-        
-        if message.is_empty() {
-            return Err(Status::invalid_argument("Invalid echo request: message is empty"));
-        }
-        
-        Ok(Response::new(EchoResponse { message }))
-    }
-    
-    async fn stream(&self, request: Request<StreamRequest>) -> Result<Response<StreamResponse>, Status> {
-        let object_id = request.into_inner().object_id;
-        trace!("Received stream request: {:?}", object_id);
-        
-        if object_id.is_empty() {
-            return Err(Status::invalid_argument("Invalid stream request: object_id is empty"));
-        }
-        
-        match get_file(&object_id) {
-            Ok(data) => Ok(Response::new(StreamResponse { data })),
-            Err(_) => Err(Status::not_found(format!("Invalid object_id: {}", object_id)))
-        }
-    }
-}
+use utils::load_tls_config;
 
 pub struct TunoGrpcServer {
     host: String,
@@ -74,25 +36,28 @@ impl TunoGrpcServer {
     }
 
     pub async fn run(&self) -> Result<()> {
-        let addr = format!("{}:{}", self.host, self.port).parse::<SocketAddr>()?;
-        let service = TunoService {};
-        
-        if let Some(TunoIdentity { cert_path, key_path }) = &self.identity {
-            let tls_config = load_tls_config(cert_path, key_path)?;
+        let addr = format!("{}:{}", self.host, self.port).parse()?;
 
-            info!("Secure gRPC server listening on: https://{}", addr);
-            Server::builder()
-                .tls_config(tls_config)?
-                .add_service(TunoServer::new(service))
-                .serve(addr)
-                .await?;
-        } else {
-            info!("gRPC server listening on: http://{}", addr);
-            Server::builder()
-                .add_service(TunoServer::new(service))
-                .serve(addr)
-                .await?;
-        }
+        let mut server = Server::builder();
+        match &self.identity {
+            Some(TunoIdentity { cert_path, key_path }) => {
+                let tls_config = load_tls_config(cert_path, key_path)?;
+                info!("Secure gRPC server listening on: https://{}", addr);
+                server = server.tls_config(tls_config)?;
+            },
+            None => info!("gRPC server listening on: http://{}", addr)
+        };
+
+        let tuno_service: tuno::TunoService = tuno::TunoService {};
+        let reflection_service = tonic_reflection::server::Builder::configure()
+            .register_encoded_file_descriptor_set(tuno::proto::FILE_DESCRIPTOR_SET)
+            .build_v1()?;
+
+        server
+            .add_service(reflection_service)
+            .add_service(TunoServer::new(tuno_service))
+            .serve(addr)
+            .await?;
         
         Ok(())
     }

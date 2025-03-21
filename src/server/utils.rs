@@ -18,8 +18,3 @@ pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<Server
     
     Ok(ServerTlsConfig::new().identity(identity))
 }
-
-// TODO: get object_id as bytes
-pub fn get_file(object_id: &str) -> Result<Vec<u8>, std::io::Error> {
-    fs::read(format!("./media/{object_id}.mp3"))
-}
