@@ -1,5 +1,5 @@
 [server]
-cert_dir = "/run/secrets/"
+cert_dir = "/opt/tuno-distributor/certs/"
 host = "0.0.0.0"
 port = 4114
 

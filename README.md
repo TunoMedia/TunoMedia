@@ -65,14 +65,6 @@ sudo systemctl enable tuno-distributor.service
 sudo systemctl start tuno-distributor.service
 ```
 
-## Run HTTPS on Raspberry Pi 4
-
-```sh
-git clone https://github.com/TunoMedia/tuno-cli.git --recursive
-cd tuno-cli
-docker compose -f docker-compose.https.yml up -d
-```
-
 #### Manual Testing
 
 Check logs with `sudo journalctl -u tuno-distributor.service`
