@@ -38,24 +38,28 @@ impl TunoGrpcServer {
     pub async fn run(&self) -> Result<()> {
         let addr = format!("{}:{}", self.host, self.port).parse()?;
 
-        let mut server = Server::builder();
-        match &self.identity {
+        let mut server = Server::builder()
+            .layer(tower_http::cors::CorsLayer::permissive());
+        server = match &self.identity {
             Some(TunoIdentity { cert_path, key_path }) => {
                 let tls_config = load_tls_config(cert_path, key_path)?;
                 info!("Secure gRPC server listening on: https://{}", addr);
-                server = server.tls_config(tls_config)?;
+                server.tls_config(tls_config)?
             },
-            None => info!("gRPC server listening on: http://{}", addr)
+            None => {
+                info!("gRPC server listening on: http://{}", addr);
+                server.accept_http1(true)
+            }
         };
 
-        let tuno_service: tuno::TunoService = tuno::TunoService {};
+        let tuno_service = TunoServer::new(tuno::TunoService {});
         let reflection_service = tonic_reflection::server::Builder::configure()
             .register_encoded_file_descriptor_set(tuno::proto::FILE_DESCRIPTOR_SET)
             .build_v1()?;
 
         server
             .add_service(reflection_service)
-            .add_service(TunoServer::new(tuno_service))
+            .add_service(tonic_web::enable(tuno_service))
             .serve(addr)
             .await?;
         

@@ -14,6 +14,8 @@ tokio = { version = "1.43.0", features = ["full"] }
 toml = "0.8.20"
 tonic = { version = "0.12.3", features = ["tls"] }
 tonic-reflection = "0.12.3"
+tonic-web = "0.12.3"
+tower-http = { version = "0.6.2", features = ["cors"] }
 
 [build-dependencies]
 tonic-build = "0.12.3"
