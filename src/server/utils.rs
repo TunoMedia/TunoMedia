@@ -1,5 +1,5 @@
 use tonic::transport::{Identity, ServerTlsConfig};
-use std::{fs, path::PathBuf};
+use std::{fs, io::BufReader, path::PathBuf};
 use anyhow::Result;
 
 pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<ServerTlsConfig> {
@@ -17,4 +17,12 @@ pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<Server
     let identity = Identity::from_pem(cert_data, key_data);
     
     Ok(ServerTlsConfig::new().identity(identity))
+}
+
+pub fn get_song_reader(object_id: &str) -> Result<BufReader<fs::File>, std::io::Error> {
+    Ok(
+        BufReader::new(
+            fs::File::open(format!("./media/{object_id}.mp3"))?
+        )
+    )
 }

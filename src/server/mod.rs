@@ -4,10 +4,9 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 mod tuno;
-use tuno::proto::tuno_server::TunoServer;
+use tuno::pb::tuno_server::TunoServer;
 
 mod utils;
-use utils::load_tls_config;
 
 pub struct TunoGrpcServer {
     host: String,
@@ -42,7 +41,7 @@ impl TunoGrpcServer {
             .layer(tower_http::cors::CorsLayer::permissive());
         server = match &self.identity {
             Some(TunoIdentity { cert_path, key_path }) => {
-                let tls_config = load_tls_config(cert_path, key_path)?;
+                let tls_config = utils::load_tls_config(cert_path, key_path)?;
                 info!("Secure gRPC server listening on: https://{}", addr);
                 server.tls_config(tls_config)?
             },
@@ -54,7 +53,7 @@ impl TunoGrpcServer {
 
         let tuno_service = TunoServer::new(tuno::TunoService {});
         let reflection_service = tonic_reflection::server::Builder::configure()
-            .register_encoded_file_descriptor_set(tuno::proto::FILE_DESCRIPTOR_SET)
+            .register_encoded_file_descriptor_set(tuno::pb::FILE_DESCRIPTOR_SET)
             .build_v1()?;
 
         server
