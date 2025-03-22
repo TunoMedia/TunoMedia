@@ -2,11 +2,9 @@ syntax = "proto3";
 package tuno;
 
 service Tuno {
-  // Echo request that returns the same message
   rpc Echo(EchoRequest) returns (EchoResponse);
-  
-  // Stream request that returns binary data
-  rpc Stream(StreamRequest) returns (StreamResponse);
+  rpc FetchSong(SongRequest) returns (SongBytes);
+  rpc StreamSong(SongStreamRequest) returns (stream SongBytes);
 }
 
 message EchoRequest {
@@ -17,10 +15,15 @@ message EchoResponse {
   string message = 1;
 }
 
-message StreamRequest {
+message SongRequest {
   string object_id = 1;
 }
 
-message StreamResponse {
+message SongStreamRequest {
+  string object_id = 1;
+  uint32 block_size = 2;
+}
+
+message SongBytes {
   bytes data = 1;
 }
