@@ -37,7 +37,7 @@ impl pb::tuno_server::Tuno for TunoService {
         request: Request<pb::SongRequest>
     ) -> Result<Response<pb::SongBytes>, Status> {
         let object_id = request.into_inner().object_id;
-        trace!("Received stream request: {:?}", object_id);
+        trace!("Received fetch request: {:?}", object_id);
         
         let mut data = vec![];
         if let Ok(mut reader) = get_song_reader(&object_id) {
@@ -55,6 +55,7 @@ impl pb::tuno_server::Tuno for TunoService {
     ) -> Result<Response<Self::StreamSongStream>, Status> {
         let song_stream_request = request.into_inner();
         let object_id = song_stream_request.object_id;
+        trace!("Received stream request: {:?}", object_id);
 
         let mut reader = match get_song_reader(&object_id) {
             Ok(reader) => reader,
@@ -65,15 +66,15 @@ impl pb::tuno_server::Tuno for TunoService {
         tokio::spawn(async move {
             let mut buf = vec![0; song_stream_request.block_size as usize];
 
-            loop {
-                while let Ok(n) = reader.read(&mut buf) {
-                    if n == 0 { break }
-                    if tx.send(Ok(pb::SongBytes { data: buf[..n].to_vec() })).await.is_err() {
-                        break;
-                    }
+            trace!("Streaming song: {:?}", object_id);
+            while let Ok(n) = reader.read(&mut buf) {
+                if n == 0 { break }
+                if tx.send(Ok(pb::SongBytes { data: buf[..n].to_vec() })).await.is_err() {
+                    break;
                 }
-
             }
+
+            trace!("Done!");
         });
 
         Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
