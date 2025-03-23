@@ -22,18 +22,31 @@ export interface EchoResponse {
     message: string;
 }
 /**
- * @generated from protobuf message tuno.StreamRequest
+ * @generated from protobuf message tuno.SongRequest
  */
-export interface StreamRequest {
+export interface SongRequest {
     /**
      * @generated from protobuf field: string object_id = 1;
      */
     objectId: string;
 }
 /**
- * @generated from protobuf message tuno.StreamResponse
+ * @generated from protobuf message tuno.SongStreamRequest
  */
-export interface StreamResponse {
+export interface SongStreamRequest {
+    /**
+     * @generated from protobuf field: string object_id = 1;
+     */
+    objectId: string;
+    /**
+     * @generated from protobuf field: uint32 block_size = 2;
+     */
+    blockSize: number;
+}
+/**
+ * @generated from protobuf message tuno.SongBytes
+ */
+export interface SongBytes {
     /**
      * @generated from protobuf field: bytes data = 1;
      */
@@ -64,33 +77,47 @@ class EchoResponse$Type extends MessageType<EchoResponse> {
  */
 export const EchoResponse = new EchoResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class StreamRequest$Type extends MessageType<StreamRequest> {
+class SongRequest$Type extends MessageType<SongRequest> {
     constructor() {
-        super("tuno.StreamRequest", [
+        super("tuno.SongRequest", [
             { no: 1, name: "object_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
 }
 /**
- * @generated MessageType for protobuf message tuno.StreamRequest
+ * @generated MessageType for protobuf message tuno.SongRequest
  */
-export const StreamRequest = new StreamRequest$Type();
+export const SongRequest = new SongRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class StreamResponse$Type extends MessageType<StreamResponse> {
+class SongStreamRequest$Type extends MessageType<SongStreamRequest> {
     constructor() {
-        super("tuno.StreamResponse", [
+        super("tuno.SongStreamRequest", [
+            { no: 1, name: "object_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "block_size", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+}
+/**
+ * @generated MessageType for protobuf message tuno.SongStreamRequest
+ */
+export const SongStreamRequest = new SongStreamRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SongBytes$Type extends MessageType<SongBytes> {
+    constructor() {
+        super("tuno.SongBytes", [
             { no: 1, name: "data", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
         ]);
     }
 }
 /**
- * @generated MessageType for protobuf message tuno.StreamResponse
+ * @generated MessageType for protobuf message tuno.SongBytes
  */
-export const StreamResponse = new StreamResponse$Type();
+export const SongBytes = new SongBytes$Type();
 /**
  * @generated ServiceType for protobuf service tuno.Tuno
  */
 export const Tuno = new ServiceType("tuno.Tuno", [
     { name: "Echo", options: {}, I: EchoRequest, O: EchoResponse },
-    { name: "Stream", options: {}, I: StreamRequest, O: StreamResponse }
+    { name: "FetchSong", options: {}, I: SongRequest, O: SongBytes },
+    { name: "StreamSong", serverStreaming: true, options: {}, I: SongStreamRequest, O: SongBytes }
 ]);

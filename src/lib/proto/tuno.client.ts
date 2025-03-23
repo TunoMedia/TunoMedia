@@ -4,8 +4,10 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { Tuno } from "./tuno";
-import type { StreamResponse } from "./tuno";
-import type { StreamRequest } from "./tuno";
+import type { SongStreamRequest } from "./tuno";
+import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
+import type { SongBytes } from "./tuno";
+import type { SongRequest } from "./tuno";
 import { stackIntercept } from "@protobuf-ts/runtime-rpc";
 import type { EchoResponse } from "./tuno";
 import type { EchoRequest } from "./tuno";
@@ -16,17 +18,17 @@ import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
  */
 export interface ITunoClient {
     /**
-     * Echo request that returns the same message
-     *
      * @generated from protobuf rpc: Echo(tuno.EchoRequest) returns (tuno.EchoResponse);
      */
     echo(input: EchoRequest, options?: RpcOptions): UnaryCall<EchoRequest, EchoResponse>;
     /**
-     * Stream request that returns binary data
-     *
-     * @generated from protobuf rpc: Stream(tuno.StreamRequest) returns (tuno.StreamResponse);
+     * @generated from protobuf rpc: FetchSong(tuno.SongRequest) returns (tuno.SongBytes);
      */
-    stream(input: StreamRequest, options?: RpcOptions): UnaryCall<StreamRequest, StreamResponse>;
+    fetchSong(input: SongRequest, options?: RpcOptions): UnaryCall<SongRequest, SongBytes>;
+    /**
+     * @generated from protobuf rpc: StreamSong(tuno.SongStreamRequest) returns (stream tuno.SongBytes);
+     */
+    streamSong(input: SongStreamRequest, options?: RpcOptions): ServerStreamingCall<SongStreamRequest, SongBytes>;
 }
 /**
  * @generated from protobuf service tuno.Tuno
@@ -38,8 +40,6 @@ export class TunoClient implements ITunoClient, ServiceInfo {
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
-     * Echo request that returns the same message
-     *
      * @generated from protobuf rpc: Echo(tuno.EchoRequest) returns (tuno.EchoResponse);
      */
     echo(input: EchoRequest, options?: RpcOptions): UnaryCall<EchoRequest, EchoResponse> {
@@ -47,12 +47,17 @@ export class TunoClient implements ITunoClient, ServiceInfo {
         return stackIntercept<EchoRequest, EchoResponse>("unary", this._transport, method, opt, input);
     }
     /**
-     * Stream request that returns binary data
-     *
-     * @generated from protobuf rpc: Stream(tuno.StreamRequest) returns (tuno.StreamResponse);
+     * @generated from protobuf rpc: FetchSong(tuno.SongRequest) returns (tuno.SongBytes);
      */
-    stream(input: StreamRequest, options?: RpcOptions): UnaryCall<StreamRequest, StreamResponse> {
+    fetchSong(input: SongRequest, options?: RpcOptions): UnaryCall<SongRequest, SongBytes> {
         const method = this.methods[1], opt = this._transport.mergeOptions(options);
-        return stackIntercept<StreamRequest, StreamResponse>("unary", this._transport, method, opt, input);
+        return stackIntercept<SongRequest, SongBytes>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: StreamSong(tuno.SongStreamRequest) returns (stream tuno.SongBytes);
+     */
+    streamSong(input: SongStreamRequest, options?: RpcOptions): ServerStreamingCall<SongStreamRequest, SongBytes> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<SongStreamRequest, SongBytes>("serverStreaming", this._transport, method, opt, input);
     }
 }
