@@ -30,20 +30,15 @@ export class TunoSocket {
     async* streamSong(objectId: string): AsyncGenerator<Uint8Array> {
         if (!this.#client) return Promise.reject("no gRPC client available");
 
-        console.log('streaming...')
-
-        let streamingCall = this.#client.streamSong({ objectId, blockSize: 1024 });
-        console.log(streamingCall)
+        let streamingCall = this.#client.streamSong({ objectId, blockSize: 1024*512 });
 
         try {
             for await (let response of streamingCall.responses) {
-                console.log(response);
                 yield response.data;
             }
         } finally {
-            console.log("all done")
             // Check for error status
-            return await streamingCall;
+            await streamingCall;
         }
     }
 }

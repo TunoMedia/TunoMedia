@@ -12,36 +12,69 @@ export class MusicPlayer {
     isPlaying: boolean = $state(false);
 	songPlayingIndex = $state(0);
 
-    #socket: TunoSocket = new TunoSocket();
-    #audio: HTMLAudioElement = new Audio();
-    #mediaSource: MediaSource | null = null;
+    #socket: TunoSocket = new TunoSocket("http://localhost:4114");
+    #audio: HTMLAudioElement;
+    #mediaSource: MediaSource;
     #sourceBuffer: SourceBuffer | null = null;
 
-    #resetMediaSource() {
-        if (this.#mediaSource) {
-            this.#mediaSource.endOfStream();
-            URL.revokeObjectURL(this.#audio.src);
+    constructor() {
+        this.#audio = new Audio();
+        this.#mediaSource = new MediaSource();
+
+        if (!MediaSource.isTypeSupported("audio/mpeg")) {
+            console.error("audio/mpeg not supported")
+            return
         }
 
-        this.#mediaSource = new MediaSource();
-        this.#mediaSource.addEventListener('sourceopen', () => {
-            this.#sourceBuffer = this.#mediaSource!.addSourceBuffer('audio/mpeg');
-        })
+        // this.#mediaSource.addEventListener("sourceopen", () => this.#resetMediaSource());
         this.#audio.src = URL.createObjectURL(this.#mediaSource);
     }
 
-    addNewSong(song: SongObject) {
-        if (this.#songs.push(song) === 1) this.loadSong()
+    #resetMediaSource() {
+        for (let buffer of this.#mediaSource.activeSourceBuffers) {
+            this.#mediaSource.removeSourceBuffer(buffer)
+        }
+
+        this.#sourceBuffer = this.#mediaSource.addSourceBuffer('audio/mpeg');
+        this.#sourceBuffer.onerror = (err) => {
+            console.error("SOURCE BUFFER err:", err);
+        }
     }
 
-    loadSong() {
+    async addNewSong(song: SongObject) {
+        if (this.#songs.push(song) === 1) await this.loadSong()
+    }
+
+    async loadSong() {
         this.#resetMediaSource();
-        this.#socket.fetchSong(this.#songs[this.songPlayingIndex].object_id)
-            .then(buf => {
+
+        try {
+            let streamCall = this.#socket.streamSong(this.#songs[this.songPlayingIndex].object_id);
+
+            let index = 0;
+            for await (let buf of streamCall) {
                 if (!this.#sourceBuffer) return console.error("sourceBuffer do not exist");
+
+                if (this.#sourceBuffer.updating) {
+                    await new Promise(res => this.#sourceBuffer!.addEventListener("updateend", res));
+                }
+
+                let appendTime = index > 0 ? this.#sourceBuffer.buffered.end(0) : 0;
+
+                this.#sourceBuffer.appendWindowStart = appendTime;
+                // this.#sourceBuffer.appendWindowEnd = appendTime + gaplessMetadata.audioDuration;
+
+                // this.#sourceBuffer.timestampOffset = appendTime - gaplessMetadata.frontPaddingDuration;
+                this.#sourceBuffer.timestampOffset = appendTime
+
                 this.#sourceBuffer.appendBuffer(buf)
-            })
-            .catch(error => console.error(error));
+            }
+
+            this.#mediaSource.endOfStream();
+            // URL.revokeObjectURL(this.#audio.src);
+        } catch(error) {
+            console.error(error)
+        }
     }
 
     togglePlaying() {
@@ -54,33 +87,34 @@ export class MusicPlayer {
     }
 
     play() {
+        console.log("start playing")
         this.isPlaying = true
         this.#audio.play()
     }
 
-    togglePlayingSelectedSong(index: number) {
+    async togglePlayingSelectedSong(index: number) {
         if (this.songPlayingIndex != index) {
             this.songPlayingIndex = index
             this.isPlaying = false
-            this.loadSong()
+            await this.loadSong()
         }
 
         this.togglePlaying()
     }
 
-    previous() {
+    async previous() {
 		if (this.songPlayingIndex <= 0) return
 		this.songPlayingIndex -= 1
 
-        this.loadSong()
+        await this.loadSong()
 		this.play()
 	}
 
-	next() {
+	async next() {
 		if (this.songPlayingIndex >= this.#songs.length - 1) return
 		this.songPlayingIndex += 1
 
-        this.loadSong()
+        await this.loadSong()
 		this.play()
 	}
 }
