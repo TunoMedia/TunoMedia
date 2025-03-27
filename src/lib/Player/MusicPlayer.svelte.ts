@@ -12,7 +12,7 @@ export class MusicPlayer {
     isPlaying: boolean = $state(false);
 	songPlayingIndex = $state(0);
 
-    #socket: TunoSocket = new TunoSocket("http://localhost:4114");
+    #socket: TunoSocket = new TunoSocket();
     #audio: HTMLAudioElement;
     #mediaSource: MediaSource;
     #sourceBuffer: SourceBuffer | null = null;
@@ -26,7 +26,14 @@ export class MusicPlayer {
             return
         }
 
-        // this.#mediaSource.addEventListener("sourceopen", () => this.#resetMediaSource());
+        this.#mediaSource.addEventListener("sourceopen", () => {
+            console.log("mse: sourceopen")
+            this.#sourceBuffer = this.#mediaSource.addSourceBuffer('audio/mpeg');
+            this.#sourceBuffer.onerror = (err) => {
+                console.error("SOURCE BUFFER err:", err);
+            }
+        });
+
         this.#audio.src = URL.createObjectURL(this.#mediaSource);
     }
 
@@ -35,9 +42,8 @@ export class MusicPlayer {
             this.#mediaSource.removeSourceBuffer(buffer)
         }
 
-        this.#sourceBuffer = this.#mediaSource.addSourceBuffer('audio/mpeg');
-        this.#sourceBuffer.onerror = (err) => {
-            console.error("SOURCE BUFFER err:", err);
+        if (this.#mediaSource.readyState === 'ended') {
+            this.#audio.src = URL.createObjectURL(this.#mediaSource);
         }
     }
 
@@ -55,23 +61,16 @@ export class MusicPlayer {
             for await (let buf of streamCall) {
                 if (!this.#sourceBuffer) return console.error("sourceBuffer do not exist");
 
-                if (this.#sourceBuffer.updating) {
-                    await new Promise(res => this.#sourceBuffer!.addEventListener("updateend", res));
-                }
-
-                let appendTime = index > 0 ? this.#sourceBuffer.buffered.end(0) : 0;
-
-                this.#sourceBuffer.appendWindowStart = appendTime;
-                // this.#sourceBuffer.appendWindowEnd = appendTime + gaplessMetadata.audioDuration;
-
-                // this.#sourceBuffer.timestampOffset = appendTime - gaplessMetadata.frontPaddingDuration;
-                this.#sourceBuffer.timestampOffset = appendTime
+                let update = new Promise(res => this.#sourceBuffer!.addEventListener("updateend", res));
 
                 this.#sourceBuffer.appendBuffer(buf)
+
+                await update;
+                index++;
             }
 
             this.#mediaSource.endOfStream();
-            // URL.revokeObjectURL(this.#audio.src);
+            URL.revokeObjectURL(this.#audio.src);
         } catch(error) {
             console.error(error)
         }
@@ -87,7 +86,6 @@ export class MusicPlayer {
     }
 
     play() {
-        console.log("start playing")
         this.isPlaying = true
         this.#audio.play()
     }
@@ -96,7 +94,7 @@ export class MusicPlayer {
         if (this.songPlayingIndex != index) {
             this.songPlayingIndex = index
             this.isPlaying = false
-            await this.loadSong()
+            this.loadSong()
         }
 
         this.togglePlaying()
@@ -106,7 +104,7 @@ export class MusicPlayer {
 		if (this.songPlayingIndex <= 0) return
 		this.songPlayingIndex -= 1
 
-        await this.loadSong()
+        this.loadSong()
 		this.play()
 	}
 
@@ -114,7 +112,7 @@ export class MusicPlayer {
 		if (this.songPlayingIndex >= this.#songs.length - 1) return
 		this.songPlayingIndex += 1
 
-        await this.loadSong()
+        this.loadSong()
 		this.play()
 	}
 }
