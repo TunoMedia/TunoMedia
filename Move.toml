@@ -8,4 +8,4 @@ edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 Iota = { git = "https://github.com/iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework", rev = "testnet" }
 
 [addresses]
-tuno = "0xd6eebb11953d91bbc4e5788ab3d1297f9ab4baf52eb2be18449399b08798b6f5"
+tuno = "0x0"
