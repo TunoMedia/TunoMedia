@@ -40,8 +40,7 @@ module tuno::tuno {
     public struct DistributorAdded has copy, drop {
         song_id: ID,
         distributor: address,
-        ip: String,
-        port: u16,
+        url: String,
         streaming_price: u64
     }
     
@@ -63,8 +62,7 @@ module tuno::tuno {
     }
     
     public struct Distributor has store {
-        ip: String,
-        port: u16,
+        url: String,
         joined_at: u64,
         streaming_price: u64,
         balance: Balance<IOTA>
@@ -206,8 +204,7 @@ module tuno::tuno {
     
     public entry fun register_as_distributor(
         song: &mut Song,
-        ip: vector<u8>,
-        port: u16,
+        url: vector<u8>,
         streaming_price: u64,
         ctx: &mut TxContext
     ) {
@@ -216,8 +213,7 @@ module tuno::tuno {
         let sender = tx_context::sender(ctx);
         
         let distributor = Distributor {
-            ip: string::utf8(ip),
-            port,
+            url: string::utf8(url),
             joined_at: tx_context::epoch(ctx),
             streaming_price,
             balance: balance::zero()
@@ -228,16 +224,14 @@ module tuno::tuno {
         event::emit(DistributorAdded {
             song_id: object::id(song),
             distributor: sender,
-            ip: string::utf8(ip),
-            port,
+            url: string::utf8(url),
             streaming_price
         });
     }
     
     public entry fun update_distributor_info(
         song: &mut Song,
-        ip: vector<u8>,
-        port: u16,
+        url: vector<u8>,
         streaming_price: u64,
         ctx: &mut TxContext
     ) {
@@ -246,15 +240,13 @@ module tuno::tuno {
         assert!(vec_map::contains(&song.distributors, &sender), ENotDistributor);
         
         let distributor = vec_map::get_mut(&mut song.distributors, &sender);
-        distributor.ip = string::utf8(ip);
-        distributor.port = port;
+        distributor.url = string::utf8(url);
         distributor.streaming_price = streaming_price;
         
         event::emit(DistributorAdded {
             song_id: object::id(song),
             distributor: sender,
-            ip: string::utf8(ip),
-            port,
+            url: string::utf8(url),
             streaming_price
         });
     }
@@ -270,8 +262,7 @@ module tuno::tuno {
         let (_, distributor) = vec_map::remove(&mut song.distributors, &sender);
         
         let Distributor {
-            ip: _,
-            port: _,
+            url: _,
             joined_at: _,
             streaming_price: _,
             balance
@@ -345,11 +336,10 @@ module tuno::tuno {
     }
     
     // Get distributor info for a specific distributor
-    public fun get_distributor_info(song: &Song, distributor: address): (String, u16, u64, u64, u64) {
+    public fun get_distributor_info(song: &Song, distributor: address): (String, u64, u64, u64) {
         let distributor_info = vec_map::get(&song.distributors, &distributor);
         (
-            distributor_info.ip,
-            distributor_info.port,
+            distributor_info.url,
             distributor_info.joined_at,
             distributor_info.streaming_price,
             balance::value(&distributor_info.balance)

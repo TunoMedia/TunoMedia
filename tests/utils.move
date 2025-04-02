@@ -54,15 +54,17 @@ module tuno::utils {
         };
     }
 
-    public(package) fun register_distributor(scenario: &mut Scenario, distributor: address, port: u16) {
+    public(package) fun register_distributor(
+        distributor: address,
+        url: vector<u8>,
+        scenario: &mut Scenario) {
         test_scenario::next_tx(scenario, distributor);
         {
             let mut song = test_scenario::take_from_sender<Song>(scenario);
             
             tuno::register_as_distributor(
                 &mut song,
-                b"192.168.1.1",
-                port,
+                url,
                 get_distributor_fee(),
                 test_scenario::ctx(scenario)
             );
