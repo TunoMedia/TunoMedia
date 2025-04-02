@@ -8,7 +8,6 @@ module tuno::utils {
     use tuno::constants::{
         get_creator,
         get_streaming_price,
-        get_distributor_fee
     };
 
     public(package) fun setup_creator(): Scenario {
@@ -57,19 +56,20 @@ module tuno::utils {
     public(package) fun register_distributor(
         distributor: address,
         url: vector<u8>,
+        price: u64,
         scenario: &mut Scenario) {
         test_scenario::next_tx(scenario, distributor);
         {
-            let mut song = test_scenario::take_from_sender<Song>(scenario);
-            
+            let mut song = test_scenario::take_from_address<Song>(scenario, get_creator());
+
             tuno::register_as_distributor(
                 &mut song,
                 url,
-                get_distributor_fee(),
+                price,
                 test_scenario::ctx(scenario)
             );
             
-            test_scenario::return_to_sender(scenario, song);
+            test_scenario::return_to_address(get_creator(), song);
         };
     }
 }
