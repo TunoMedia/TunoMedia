@@ -1,8 +1,21 @@
 use anyhow::Result;
+use clap::Parser;
+use tuno_cli::tuno_commands::TunoCommands;
 
-use tuno_cli::run;
+#[derive(Parser)]
+#[command(
+    name = env!("CARGO_BIN_NAME"),
+    about = "Client for interacting with the Tuno Media network",
+)]
+struct Args {
+    #[command(subcommand)]
+    command: TunoCommands,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    run().await
+    let args = Args::parse();
+    env_logger::init();
+    args.command.execute().await?;
+    Ok(())
 }
