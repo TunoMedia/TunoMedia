@@ -73,3 +73,11 @@ Test grpc implementation with `grpcui`:
 ```sh
 grpcui -plaintext "localhost:4114"
 ```
+
+```
+error[E0432]: unresolved import `iota_sdk::wallet_context::WalletContext`
+ --> src/client.rs:5:5
+  |
+5 |     wallet_context::WalletContext
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `WalletContext` in `wallet_context`
+```

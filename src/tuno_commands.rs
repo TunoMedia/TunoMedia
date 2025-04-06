@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
@@ -9,13 +8,6 @@ use crate::{
 
 #[derive(Parser)]
 pub enum TunoCommands {
-    /// Publish tuno package to IOTA
-    Publish {
-        /// The IOTA CLI config file, (default: ~/.iota/iota_config/client.yaml)
-        #[arg(long)]
-        config: Option<PathBuf>
-    },
-
     /// Client for distributors
     Distribution {
         #[command(subcommand)]
@@ -32,14 +24,6 @@ pub enum TunoCommands {
 impl TunoCommands {
     pub async fn execute(self) -> Result<()> {
         match self {
-            TunoCommands::Publish {
-                config
-            } => {
-                todo!("publish command");
-
-                Ok(())
-            }
-
             TunoCommands::Distribution {
                 cmd
             } => {
