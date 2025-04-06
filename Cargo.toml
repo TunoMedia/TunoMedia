@@ -9,14 +9,14 @@ env_logger = "0.11.8"
 log = "0.4.27"
 tokio = { version = "1.43.0", features = ["full"] }
 tokio-stream = "0.1.17"
-toml = "0.8.20"
 tonic = { version = "0.12.3", features = ["tls"] }
 tonic-reflection = "0.12.3"
 tonic-web = "0.12.3"
 prost = "0.13.5"
 tower-http = { version = "0.6.2", features = ["cors"] }
-iota-sdk = { git = "https://github.com/iotaledger/iota", package = "iota-sdk" }
-clap = "4.5.35"
+iota-sdk = { path = "iota/crates/iota-sdk" }
+clap = { version = "4.5.35", features = ["derive", "env"] }
+dirs = "6.0.0"
 
 [build-dependencies]
 tonic-build = "0.12.3"
