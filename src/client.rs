@@ -139,10 +139,12 @@ impl Client {
         metadata: SongMetadata
     ) -> Result<(ObjectID, TransactionDigest)> {
         let mut ptb = ProgrammableTransactionBuilder::new();
-        let mut args = metadata.as_arguments(&mut ptb)?;
-
-        let cap_ref = self.wallet.get_object_ref(cap).await?;
-        args.push(ptb.obj(ObjectArg::ImmOrOwnedObject(cap_ref))?);
+        let mut args = vec![
+            ptb.obj(ObjectArg::ImmOrOwnedObject(
+                self.wallet.get_object_ref(cap).await?
+            ))?
+        ];
+        args.append(&mut metadata.as_arguments(&mut ptb)?);
 
         ptb.programmable_move_call(
             self.package_id,
