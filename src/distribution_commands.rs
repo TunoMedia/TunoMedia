@@ -9,7 +9,7 @@ use crate::server::TunoGrpcServer;
 pub enum DistributionCommands {
     /// Start distribution 
     Start {
-        /// certificate directory with `fullchain.pem` and `privkey.pem` files to enable HTTPS connections
+        /// Certificate directory with `fullchain.pem` and `privkey.pem` files to enable HTTPS connections
         #[arg(long)]
         cert_dir: Option<PathBuf>,
         /// IP to start RPC server on. (default: 127.0.0.1)
@@ -49,16 +49,12 @@ impl DistributionCommands {
 
             } => {
                 todo!("add command");
-
-                Ok(())
             }
 
             DistributionCommands::Download {
 
             } => {
                 todo!("download command");
-
-                Ok(())
             }
         }
     }

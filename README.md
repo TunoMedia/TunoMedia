@@ -74,6 +74,19 @@ Test grpc implementation with `grpcui`:
 grpcui -plaintext "localhost:4114"
 ```
 
+## Deploy
+
+Publish package:
+```sh
+iota client publish tuno
+```
+
+Export created PackageID from Published Objects:
+```sh
+export PKG="<PackageID>"
+```
+
+TODO: report problem with SDK's default import method
 ```
 error[E0432]: unresolved import `iota_sdk::wallet_context::WalletContext`
  --> src/client.rs:5:5

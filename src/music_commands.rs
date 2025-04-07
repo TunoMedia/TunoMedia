@@ -65,16 +65,14 @@ impl MusicCommands {
             } => {
                 let client = Client::new(conn)?;
 
-                todo!("publish command");
+                let (
+                    song_id,
+                    digest
+                ) = client.create_song(cap, metadata).await?;
 
-                // TODO: get CreatorCap's object reference from ObjectID
-                // let (
-                //     song_id,
-                //     digest
-                // ) = client.create_song(cap.object_ref(), metadata).await?;
-
-                // println!("Song succesfully published on {}", digest);
-                // println!("ID: {}", song_id);
+                println!("Song succesfully published on {}", digest);
+                println!("ID: {}", song_id);
+                println!("file: {}", file.display());
                 
                 Ok(())
             }
@@ -83,16 +81,12 @@ impl MusicCommands {
 
             } => {
                 todo!("set-song command");
-
-                Ok(())
             }
 
             MusicCommands::GetSong {
 
             } => {
                 todo!("get-song command");
-
-                Ok(())
             }
         }
     }
