@@ -17,7 +17,7 @@ module tuno::user_tests {
     use tuno::utils::{
         setup_creator,
         create_test_song,
-        list_song_on_kiosk,
+        place_song_on_kiosk,
         register_distributor
     };
 
@@ -25,7 +25,7 @@ module tuno::user_tests {
     fun test_full_user_journey() {
         let mut scenario = setup_creator();
         create_test_song(&mut scenario);
-        list_song_on_kiosk(&mut scenario);
+        place_song_on_kiosk(&mut scenario);
         register_distributor(get_distributor1(), b"192.168.1.1:8080", get_distributor_fee(), &mut scenario);
 
         // Discover and Pay

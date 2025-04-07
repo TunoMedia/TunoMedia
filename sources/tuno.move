@@ -13,8 +13,8 @@ module tuno::tuno {
     const ENotDistributor: u64 = 1;
     const ENotOwner: u64 = 2;
     const EInsufficientAmount: u64 = 3;
-    const ENotListed: u64 = 4;
-    const EAlreadyListed: u64 = 5;
+    const ENotAvailable: u64 = 4;
+    const EAlreadyAvailable: u64 = 5;
     const ESongNotInKiosk: u64 = 6;
     
     // ======== Events ========
@@ -26,13 +26,13 @@ module tuno::tuno {
         streaming_price: u64
     }
     
-    public struct SongListed has copy, drop {
+    public struct SongBecameAvailable has copy, drop {
         id: ID,
         kiosk_id: ID,
         streaming_price: u64
     }
     
-    public struct SongDelisted has copy, drop {
+    public struct SongBecameUnavailable has copy, drop {
         id: ID,
         kiosk_id: ID
     }
@@ -58,7 +58,7 @@ module tuno::tuno {
         owner: address,
         creator_balance: Balance<IOTA>,
         distributors: VecMap<address, Distributor>,
-        is_listed: bool
+        is_available: bool
     }
     
     public struct Distributor has store {
@@ -122,7 +122,7 @@ module tuno::tuno {
             streaming_price,
             creator_balance: balance::zero(),
             distributors: vec_map::empty(),
-            is_listed: false
+            is_available: false
         };
         
         event::emit(SongCreated {
@@ -135,7 +135,7 @@ module tuno::tuno {
         transfer::transfer(song, sender);
     }
     
-    public entry fun list_song(
+    public entry fun make_song_available(
         song: &mut Song,
         kiosk: &mut Kiosk,
         cap: &KioskOwnerCap,
@@ -144,7 +144,7 @@ module tuno::tuno {
         let sender = tx_context::sender(ctx);
         assert!(sender == song.owner, ENotOwner);
         
-        assert!(!song.is_listed, EAlreadyListed);
+        assert!(!song.is_available, EAlreadyAvailable);
 
         let song_display = SongDisplay {
             id: object::new(ctx),
@@ -158,16 +158,16 @@ module tuno::tuno {
         
         kiosk::place(kiosk, cap, song_display);
         
-        song.is_listed = true;
+        song.is_available = true;
         
-        event::emit(SongListed {
+        event::emit(SongBecameAvailable {
             id: object::id(song),
             kiosk_id: object::id(kiosk),
             streaming_price: song.streaming_price
         });
     }
     
-    public entry fun delist_song(
+    public entry fun make_song_unavailable(
         song: &mut Song,
         kiosk: &mut Kiosk,
         cap: &KioskOwnerCap,
@@ -177,7 +177,7 @@ module tuno::tuno {
         let sender = tx_context::sender(ctx);
         assert!(sender == song.owner, ENotOwner);
         
-        assert!(song.is_listed, ENotListed);
+        assert!(song.is_available, ENotAvailable);
         
         let song_display = kiosk::take<SongDisplay>(kiosk, cap, song_display_id);
         
@@ -194,9 +194,9 @@ module tuno::tuno {
         } = song_display;
         object::delete(id);
         
-        song.is_listed = false;
+        song.is_available = false;
         
-        event::emit(SongDelisted {
+        event::emit(SongBecameUnavailable {
             id: object::id(song),
             kiosk_id: object::id(kiosk)
         });
@@ -208,7 +208,7 @@ module tuno::tuno {
         streaming_price: u64,
         ctx: &mut TxContext
     ) {
-        assert!(song.is_listed, ENotListed);
+        assert!(song.is_available, ENotAvailable);
         
         let sender = tx_context::sender(ctx);
         
@@ -276,7 +276,7 @@ module tuno::tuno {
         distributor_addr: address,
         payment: Coin<IOTA>
     ) {
-        assert!(song.is_listed, ENotListed);
+        assert!(song.is_available, ENotAvailable);
         
         assert!(vec_map::contains(&song.distributors, &distributor_addr), ENotDistributor);
         
@@ -356,7 +356,7 @@ module tuno::tuno {
             song.genre,
             song.streaming_price,
             balance::value(&song.creator_balance),
-            song.is_listed
+            song.is_available
         )
     }
     
@@ -372,8 +372,8 @@ module tuno::tuno {
         vec_map::contains(&song.distributors, &distributor)
     }
     
-    // Check if a song is currently listed
-    public fun is_listed(song: &Song): bool {
-        song.is_listed
+    // Check if a song is currently available
+    public fun is_available(song: &Song): bool {
+        song.is_available
     }
 }

@@ -18,7 +18,7 @@ module tuno::distributor_tests {
     use tuno::utils::{
         setup_creator,
         create_test_song,
-        list_song_on_kiosk,
+        place_song_on_kiosk,
         register_distributor
     };
 
@@ -26,7 +26,7 @@ module tuno::distributor_tests {
     fun test_distributor_registration_and_update() {
         let mut scenario = setup_creator();
         create_test_song(&mut scenario);
-        list_song_on_kiosk(&mut scenario);
+        place_song_on_kiosk(&mut scenario);
         register_distributor(get_distributor1(), b"192.168.1.1:8080", get_distributor_fee(), &mut scenario);
         
         // Check if distributor was registered
@@ -70,7 +70,7 @@ module tuno::distributor_tests {
     fun test_royalty_payments_and_withdrawals() {
         let mut scenario = setup_creator();
         create_test_song(&mut scenario);
-        list_song_on_kiosk(&mut scenario);
+        place_song_on_kiosk(&mut scenario);
         register_distributor(get_distributor1(), b"192.168.1.1:8080", get_distributor_fee(), &mut scenario);
         
         // User makes payment for streaming
@@ -129,7 +129,7 @@ module tuno::distributor_tests {
     fun test_multiple_distributors() {
         let mut scenario = setup_creator();
         create_test_song(&mut scenario);
-        list_song_on_kiosk(&mut scenario);
+        place_song_on_kiosk(&mut scenario);
         register_distributor(get_distributor1(), b"192.168.1.1:8080", get_distributor_fee(), &mut scenario);
         register_distributor(get_distributor2(), b"192.168.1.2:8082", get_distributor_fee() + 100_000, &mut scenario);
         
@@ -157,7 +157,7 @@ module tuno::distributor_tests {
     fun test_remove_distributor() {
         let mut scenario = setup_creator();
         create_test_song(&mut scenario);
-        list_song_on_kiosk(&mut scenario);        
+        place_song_on_kiosk(&mut scenario);        
         register_distributor(get_distributor1(), b"192.168.1.1:8080", get_distributor_fee(), &mut scenario);
 
         // Remove as distributor

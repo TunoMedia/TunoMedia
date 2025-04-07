@@ -14,7 +14,7 @@ module tuno::creator_tests {
     use tuno::utils::{
         setup_creator,
         create_test_song,
-        list_song_on_kiosk,
+        place_song_on_kiosk,
     };
     
     #[test]
@@ -52,7 +52,7 @@ module tuno::creator_tests {
             assert_eq(year, 2025);
             assert_eq(genre, string::utf8(b"Electronic"));
             assert_eq(price, get_streaming_price());
-            assert_eq(tuno::is_listed(&song), false);
+            assert_eq(tuno::is_available(&song), false);
             
             test_scenario::return_to_sender(&scenario, song);
         };
@@ -61,17 +61,17 @@ module tuno::creator_tests {
     }
 
     #[test]
-    fun test_song_listing_and_delisting() {
+    fun test_song_availability() {
         let mut scenario = setup_creator();
         create_test_song(&mut scenario);
-        list_song_on_kiosk(&mut scenario);
+        place_song_on_kiosk(&mut scenario);
         
-        // Verify song is listed
+        // Verify song is available
         test_scenario::next_tx(&mut scenario, get_creator());
         {
             let song = test_scenario::take_from_sender<Song>(&scenario);
 
-            assert_eq(tuno::is_listed(&song), true);
+            assert_eq(tuno::is_available(&song), true);
             
             test_scenario::return_to_sender(&scenario, song);
         };
@@ -88,7 +88,7 @@ module tuno::creator_tests {
             test_scenario::return_shared(kiosk);
         };
         
-        // Delist the song
+        // Disable the song
         test_scenario::next_tx(&mut scenario, get_creator());
         {
             let song = test_scenario::take_from_sender<Song>(&scenario);
@@ -99,9 +99,9 @@ module tuno::creator_tests {
             // let items = kiosk::(&kiosk);
             // let display_id = *vector::borrow(&items, 0);
             
-            // tuno::delist_song(&mut song, &mut kiosk, &cap, display_id, test_scenario::ctx(&mut scenario));
+            // tuno::make_song_unavailable(&mut song, &mut kiosk, &cap, display_id, test_scenario::ctx(&mut scenario));
             
-            // assert_eq(tuno::is_listed(&song), false);
+            // assert_eq(tuno::is_available(&song), false);
             
             test_scenario::return_to_sender(&scenario, song);
             test_scenario::return_to_sender(&scenario, cap);
