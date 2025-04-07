@@ -1,5 +1,7 @@
+use dotenv::dotenv;
 use anyhow::Result;
 use clap::Parser;
+
 use tuno_cli::tuno_commands::TunoCommands;
 
 #[derive(Parser)]
@@ -14,6 +16,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenv().ok();
     let args = Args::parse();
     env_logger::init();
     args.command.execute().await?;

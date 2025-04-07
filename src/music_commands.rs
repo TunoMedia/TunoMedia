@@ -20,8 +20,8 @@ pub enum MusicCommands {
         #[arg(long)]
         file: PathBuf,
 
-        /// Creator capability's object id (returned at registration)
-        #[arg(long)]
+        /// Creator capability's object id (created at registration)
+        #[arg(long, env = "CREATOR_CAP")]
         cap: ObjectID,
 
         #[command(flatten)]

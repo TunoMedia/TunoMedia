@@ -3,15 +3,17 @@ use std::path::PathBuf;
 use iota_sdk::{
     types::{
         Identifier,
-        base_types::ObjectID, 
-        digests::TransactionDigest, 
-        programmable_transaction_builder::ProgrammableTransactionBuilder, 
+        base_types::ObjectID,
+        digests::TransactionDigest,
+        programmable_transaction_builder::ProgrammableTransactionBuilder,
         transaction::{Argument, ObjectArg, ProgrammableTransaction, TransactionData}
     },
+    rpc_types::IotaTransactionBlockResponse,
     wallet_context::WalletContext
 };
 use anyhow::{bail, Result};
 use clap::Parser;
+use log::info;
 
 use crate::utils::{
     extract_created_cap,
@@ -112,18 +114,13 @@ impl Client {
         ptb.programmable_move_call(
             self.package_id,
             Identifier::new("tuno").unwrap(),
-            Identifier::new("create_song").unwrap(),
+            Identifier::new("register_creator").unwrap(),
             vec![],
             vec![]
         );
 
-        let resp = execute_transaction(
-            &self.wallet,
-            self.wallet.sign_transaction(
-                &self.build_transaction_data(
-                    ptb.finish()
-                ).await?
-            )
+        let resp = self.build_and_execute_transaction_data(
+            ptb.finish()
         ).await?;
 
         Ok((
@@ -155,13 +152,8 @@ impl Client {
             args
         );
 
-        let resp = execute_transaction(
-            &self.wallet,
-            self.wallet.sign_transaction(
-                &self.build_transaction_data(
-                    ptb.finish()
-                ).await?
-            )
+        let resp = self.build_and_execute_transaction_data(
+            ptb.finish()
         ).await?;
 
         Ok((
@@ -170,18 +162,24 @@ impl Client {
         ))
     }
 
-    async fn build_transaction_data(
+    async fn build_and_execute_transaction_data(
         &self,
         pt: ProgrammableTransaction
-    ) -> Result<TransactionData> {
+    ) -> Result<IotaTransactionBlockResponse> {
+        info!("building transaction: \n{}", pt.to_string());
         let sender = self.wallet.active_address()?;
-
-        Ok(TransactionData::new_programmable(
+        let tx_data = TransactionData::new_programmable(
             sender,
             self.wallet.get_all_gas_objects_owned_by_address(sender).await?,
             pt,
             10_000_000,
             self.wallet.get_reference_gas_price().await?,
-        ))
+        );
+
+        info!("Signing {}...", tx_data.digest());
+        let tx = self.wallet.sign_transaction(&tx_data);
+
+        info!("Executing {}...", tx.digest());
+        execute_transaction(&self.wallet, tx).await
     }
 }
