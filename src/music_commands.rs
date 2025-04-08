@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::Parser;
 use iota_sdk::types::base_types::ObjectID;
 
-use crate::client::{Client, Connection, SongMetadata};
+use crate::client::{Client, Connection, OwnedKiosk, SongMetadata};
 
 #[derive(Parser)]
 pub enum MusicCommands {
@@ -14,7 +14,7 @@ pub enum MusicCommands {
         conn: Connection
     },
 
-    /// Publish new song 
+    /// Publish new song and make it available
     Publish {
         /// MP3 file containing the song
         #[arg(long)]
@@ -24,11 +24,41 @@ pub enum MusicCommands {
         #[arg(long, env = "CREATOR_CAP")]
         cap: ObjectID,
 
+        // fix: flatten makes arguments required. See: https://github.com/clap-rs/clap/issues/5092
+        #[command(flatten)]
+        owned_kiosk: Option<OwnedKiosk>,
+
         #[command(flatten)]
         metadata: SongMetadata,
         #[command(flatten)]
         conn: Connection
     },
+
+    /// Make song available for distribution
+    MakeAvailable {
+        /// Song's object id
+        #[arg(long)]
+        song: ObjectID,
+
+        #[command(flatten)]
+        owned_kiosk: OwnedKiosk,
+
+        #[command(flatten)]
+        conn: Connection
+    },
+
+        /// Make song unavailable for distribution
+        MakeUnavailable {
+            /// Song's object id
+            #[arg(long)]
+            song: ObjectID,
+    
+            #[command(flatten)]
+            owned_kiosk: OwnedKiosk,
+    
+            #[command(flatten)]
+            conn: Connection
+        },
 
     /// Update song's metadata
     SetSong,
@@ -59,6 +89,7 @@ impl MusicCommands {
 
             MusicCommands::Publish {
                 file,
+                owned_kiosk,
                 cap,
                 metadata,
                 conn
@@ -66,14 +97,49 @@ impl MusicCommands {
                 let client = Client::new(conn)?;
 
                 let (
-                    song_id,
+                    song,
                     digest
                 ) = client.create_song(cap, metadata).await?;
 
-                println!("Song succesfully published on {}", digest);
-                println!("ID: {}", song_id);
-                println!("file: {}", file.display());
+                println!("Song succesfully published [{}]", digest);
+                println!("ID: {}", song);
+
+                if let Some(owned_kiosk) = owned_kiosk {
+                    match client.make_song_available(song, owned_kiosk).await {
+                        Ok(digest) => println!("Status: + [{}]", digest),
+                        Err(e) => println!("Status: - [{e}]")
+                    }
+                } else {
+                    println!("Status: -");
+                }
+
+                // TODO: store file media/aa/bbccdd
+                println!("location: {}", file.display());
                 
+                Ok(())
+            }
+
+            MusicCommands::MakeAvailable {
+                song,
+                owned_kiosk,
+                conn
+            } => {
+                let client = Client::new(conn)?;
+                let digest = client.make_song_available(song, owned_kiosk).await?;
+
+                println!("Song ({}) is now available [{}]", song, digest);
+                Ok(())
+            }
+
+            MusicCommands::MakeUnavailable {
+                song,
+                owned_kiosk,
+                conn
+            } => {
+                let client = Client::new(conn)?;
+                let digest = client.make_song_unavailable(song, owned_kiosk).await?;
+
+                println!("Song ({}) is now unavailable [{}]", song, digest);
                 Ok(())
             }
 

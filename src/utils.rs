@@ -1,6 +1,6 @@
 use iota_sdk::{
-    rpc_types::{IotaExecutionStatus, IotaTransactionBlockEffectsAPI, IotaTransactionBlockResponse, ObjectChange},
-    types::{base_types::ObjectID, transaction::Transaction, IOTA_FRAMEWORK_PACKAGE_ID},
+    rpc_types::{IotaExecutionStatus, IotaObjectData, IotaObjectDataOptions, IotaTransactionBlockEffectsAPI, IotaTransactionBlockResponse, ObjectChange},
+    types::{base_types::{ObjectID, SequenceNumber}, object::Owner, transaction::Transaction, IOTA_FRAMEWORK_PACKAGE_ID},
     wallet_context::WalletContext
 };
 use anyhow::{bail, Context, Result};
@@ -63,6 +63,37 @@ fn extract_created_object(
     };
 
     Ok(*song_id)
+}
+
+pub(crate) async fn get_initial_shared_version(
+    wallet: &WalletContext,
+    id: ObjectID
+) -> Result<SequenceNumber> {
+    let response = wallet.get_client().await?
+        .read_api()
+        .get_object_with_options(
+            id,
+            IotaObjectDataOptions::new().with_owner(),
+        ).await?;
+
+    if let Some(err) = response.error {
+        bail!(err);
+    }
+
+    let Some(IotaObjectData {
+        owner: Some(owner),
+        ..
+    }) = response.data else {
+        bail!("No data for object {}", id);
+    };
+
+    let Owner::Shared {
+        initial_shared_version
+    } = owner else {
+        bail!("Object {} is not shared", id);
+    };
+    
+    Ok(initial_shared_version)
 }
 
 pub(crate) async fn execute_transaction(
