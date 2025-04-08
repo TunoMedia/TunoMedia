@@ -43,6 +43,8 @@ module tuno::tuno {
         url: String,
         streaming_price: u64
     }
+
+    // TODO: DistributorRemoved
     
     // ======== Objects ========
     
@@ -58,7 +60,7 @@ module tuno::tuno {
         owner: address,
         creator_balance: Balance<IOTA>,
         distributors: VecMap<address, Distributor>,
-        is_available: bool
+        display_id: Option<ID>
     }
     
     public struct Distributor has store {
@@ -122,7 +124,7 @@ module tuno::tuno {
             streaming_price,
             creator_balance: balance::zero(),
             distributors: vec_map::empty(),
-            is_available: false
+            display_id: option::none()
         };
         
         event::emit(SongCreated {
@@ -144,7 +146,7 @@ module tuno::tuno {
         let sender = tx_context::sender(ctx);
         assert!(sender == song.owner, ENotOwner);
         
-        assert!(!song.is_available, EAlreadyAvailable);
+        assert!(!is_available(song), EAlreadyAvailable);
 
         let song_display = SongDisplay {
             id: object::new(ctx),
@@ -155,11 +157,11 @@ module tuno::tuno {
             streaming_price: song.streaming_price,
             cover_art_url: song.cover_art_url,
         };
+
+        song.display_id = option::some(object::id(&song_display));
         
         kiosk::place(kiosk, cap, song_display);
-        
-        song.is_available = true;
-        
+                
         event::emit(SongBecameAvailable {
             id: object::id(song),
             kiosk_id: object::id(kiosk),
@@ -171,15 +173,14 @@ module tuno::tuno {
         song: &mut Song,
         kiosk: &mut Kiosk,
         cap: &KioskOwnerCap,
-        song_display_id: ID,
         ctx: &mut TxContext
     ) {
         let sender = tx_context::sender(ctx);
         assert!(sender == song.owner, ENotOwner);
         
-        assert!(song.is_available, ENotAvailable);
+        assert!(is_available(song), ENotAvailable);
         
-        let song_display = kiosk::take<SongDisplay>(kiosk, cap, song_display_id);
+        let song_display = kiosk::take<SongDisplay>(kiosk, cap, song.display_id.extract());
         
         assert!(song_display.song_id == object::id(song), ESongNotInKiosk);
         
@@ -194,7 +195,7 @@ module tuno::tuno {
         } = song_display;
         object::delete(id);
         
-        song.is_available = false;
+        song.display_id = option::none();
         
         event::emit(SongBecameUnavailable {
             id: object::id(song),
@@ -208,7 +209,7 @@ module tuno::tuno {
         streaming_price: u64,
         ctx: &mut TxContext
     ) {
-        assert!(song.is_available, ENotAvailable);
+        assert!(is_available(song), ENotAvailable);
         
         let sender = tx_context::sender(ctx);
         
@@ -276,7 +277,7 @@ module tuno::tuno {
         distributor_addr: address,
         payment: Coin<IOTA>
     ) {
-        assert!(song.is_available, ENotAvailable);
+        assert!(is_available(song), ENotAvailable);
         
         assert!(vec_map::contains(&song.distributors, &distributor_addr), ENotDistributor);
         
@@ -347,7 +348,7 @@ module tuno::tuno {
     }
     
     // Get song info including streaming price and creator balance
-    public fun get_song_info(song: &Song): (String, String, String, u64, String, u64, u64, bool) {
+    public fun get_song_info(song: &Song): (String, String, String, u64, String, u64, u64, Option<ID>) {
         (
             song.title,
             song.artist,
@@ -356,7 +357,7 @@ module tuno::tuno {
             song.genre,
             song.streaming_price,
             balance::value(&song.creator_balance),
-            song.is_available
+            song.display_id
         )
     }
     
@@ -374,6 +375,6 @@ module tuno::tuno {
     
     // Check if a song is currently available
     public fun is_available(song: &Song): bool {
-        song.is_available
+        song.display_id.is_some()
     }
 }

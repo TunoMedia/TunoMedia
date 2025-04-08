@@ -91,32 +91,28 @@ module tuno::creator_tests {
         // Disable the song
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let song = test_scenario::take_from_sender<Song>(&scenario);
-            let kiosk = test_scenario::take_shared<Kiosk>(&scenario);
+            let mut song = test_scenario::take_from_sender<Song>(&scenario);
+            let mut kiosk = test_scenario::take_shared<Kiosk>(&scenario);
             let cap = test_scenario::take_from_sender<KioskOwnerCap>(&scenario);
             
-            // // TODO: Get the song display ID from the kiosk
-            // let items = kiosk::(&kiosk);
-            // let display_id = *vector::borrow(&items, 0);
+            tuno::make_song_unavailable(&mut song, &mut kiosk, &cap, test_scenario::ctx(&mut scenario));
             
-            // tuno::make_song_unavailable(&mut song, &mut kiosk, &cap, display_id, test_scenario::ctx(&mut scenario));
-            
-            // assert_eq(tuno::is_available(&song), false);
+            assert_eq(tuno::is_available(&song), false);
             
             test_scenario::return_to_sender(&scenario, song);
             test_scenario::return_to_sender(&scenario, cap);
             test_scenario::return_shared(kiosk);
         };
         
-        // // Verify song display is no longer in kiosk
-        // test_scenario::next_tx(&mut scenario, get_creator());
-        // {
-        //     let kiosk = test_scenario::take_shared<Kiosk>(&scenario);
+        // Verify song display is no longer in kiosk
+        test_scenario::next_tx(&mut scenario, get_creator());
+        {
+            let kiosk = test_scenario::take_shared<Kiosk>(&scenario);
             
-        //     assert_eq(kiosk::item_count(&kiosk), 0);
+            assert_eq(kiosk::item_count(&kiosk), 0);
             
-        //     test_scenario::return_shared(kiosk);
-        // };
+            test_scenario::return_shared(kiosk);
+        };
         
         test_scenario::end(scenario);
     }

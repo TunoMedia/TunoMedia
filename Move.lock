@@ -21,7 +21,7 @@ id = "MoveStdlib"
 source = { git = "https://github.com/iotaledger/iota.git", rev = "testnet", subdir = "crates/iota-framework/packages/move-stdlib" }
 
 [move.toolchain-version]
-compiler-version = "0.9.2-rc"
+compiler-version = "0.10.3-rc"
 edition = "2024.beta"
 flavor = "iota"
 
@@ -29,6 +29,6 @@ flavor = "iota"
 
 [env.testnet]
 chain-id = "2304aa97"
-original-published-id = "0xd6eebb11953d91bbc4e5788ab3d1297f9ab4baf52eb2be18449399b08798b6f5"
-latest-published-id = "0xd6eebb11953d91bbc4e5788ab3d1297f9ab4baf52eb2be18449399b08798b6f5"
+original-published-id = "0x8466e6116ef39541a37c8074c9245ebadefa34165c4a1e831155d8279788d6cc"
+latest-published-id = "0x8466e6116ef39541a37c8074c9245ebadefa34165c4a1e831155d8279788d6cc"
 published-version = "1"
