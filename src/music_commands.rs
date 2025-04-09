@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::Parser;
 use iota_sdk::types::base_types::ObjectID;
 
-use crate::client::{Client, Connection, OwnedKiosk, SongMetadata};
+use crate::{client::{Client, Connection, OwnedKiosk, SongMetadata}, local_storage::store_song};
 
 #[derive(Parser)]
 pub enum MusicCommands {
@@ -47,18 +47,18 @@ pub enum MusicCommands {
         conn: Connection
     },
 
-        /// Make song unavailable for distribution
-        MakeUnavailable {
-            /// Song's object id
-            #[arg(long)]
-            song: ObjectID,
-    
-            #[command(flatten)]
-            owned_kiosk: OwnedKiosk,
-    
-            #[command(flatten)]
-            conn: Connection
-        },
+    /// Make song unavailable for distribution
+    MakeUnavailable {
+        /// Song's object id
+        #[arg(long)]
+        song: ObjectID,
+
+        #[command(flatten)]
+        owned_kiosk: OwnedKiosk,
+
+        #[command(flatten)]
+        conn: Connection
+    },
 
     /// Update song's metadata
     SetSong,
@@ -113,8 +113,7 @@ impl MusicCommands {
                     println!("Status: -");
                 }
 
-                // TODO: store file media/aa/bbccdd
-                println!("location: {}", file.display());
+                println!("location: {}", store_song(&file, &song.to_hex())?.display());
                 
                 Ok(())
             }

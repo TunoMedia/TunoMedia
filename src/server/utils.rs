@@ -2,6 +2,8 @@ use tonic::transport::{Identity, ServerTlsConfig};
 use std::{fs, io::BufReader, path::PathBuf};
 use anyhow::Result;
 
+use crate::local_storage::get_local_song_file;
+
 pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<ServerTlsConfig> {
     if !cert_path.exists() {
         return Err(anyhow::anyhow!("Certificate file not found: {:?}", cert_path));
@@ -19,10 +21,10 @@ pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<Server
     Ok(ServerTlsConfig::new().identity(identity))
 }
 
-pub fn get_song_reader(object_id: &str) -> Result<BufReader<fs::File>, std::io::Error> {
+pub fn get_song_reader(object_id: &str) -> Result<BufReader<fs::File>> {
     Ok(
         BufReader::new(
-            fs::File::open(format!("./media/{object_id}.mp3"))?
+            get_local_song_file(object_id)?
         )
     )
 }

@@ -4,3 +4,4 @@ pub(crate) mod distribution_commands;
 pub(crate) mod music_commands;
 pub(crate) mod client;
 pub(crate) mod utils;
+pub(crate) mod local_storage;
