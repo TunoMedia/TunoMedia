@@ -1,9 +1,10 @@
 use iota_sdk::{
-    rpc_types::{IotaExecutionStatus, IotaObjectData, IotaObjectDataOptions, IotaTransactionBlockEffectsAPI, IotaTransactionBlockResponse, ObjectChange},
-    types::{base_types::{ObjectID, SequenceNumber}, object::Owner, transaction::Transaction, IOTA_FRAMEWORK_PACKAGE_ID},
+    rpc_types::{IotaExecutionStatus, IotaObjectData, IotaObjectDataFilter, IotaObjectDataOptions, IotaObjectResponse, IotaObjectResponseQuery, IotaTransactionBlockEffectsAPI, IotaTransactionBlockResponse, ObjectChange},
+    types::{base_types::{ObjectID, SequenceNumber}, object::Owner, transaction::Transaction, Identifier, IOTA_FRAMEWORK_PACKAGE_ID},
     wallet_context::WalletContext
 };
 use anyhow::{bail, Context, Result};
+use move_core_types::{account_address::AccountAddress, language_storage::StructTag};
 
 pub(crate) fn extract_created_cap(
     resp: &IotaTransactionBlockResponse,
@@ -114,4 +115,33 @@ pub(crate) async fn execute_transaction(
     }
 
     Ok(response)
+}
+
+pub(crate) async fn get_all_owned_songs(
+    wallet: &WalletContext,
+    package_id: ObjectID
+) -> Result<Vec<IotaObjectResponse>> {
+    let response = wallet.get_client().await?
+        .read_api()
+        .get_owned_objects(
+            wallet.active_address()?,
+            IotaObjectResponseQuery {
+                filter: Some(
+                    IotaObjectDataFilter::StructType(
+                        StructTag {
+                            address: AccountAddress::from(package_id),
+                            module: Identifier::new("tuno").unwrap(),
+                            name: Identifier::new("Song").unwrap(),
+                            type_params: vec![]
+                        }
+                    )
+                ),
+                options: Some(IotaObjectDataOptions::new().with_content())
+            },
+            None,
+            None
+        ).await?;
+
+    // TODO: Deal with next page
+    Ok(response.data)
 }

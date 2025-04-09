@@ -1,3 +1,4 @@
+pub(crate) mod displays;
 pub(crate) mod server;
 pub mod tuno_commands;
 pub(crate) mod distribution_commands;

@@ -60,6 +60,12 @@ pub enum MusicCommands {
         conn: Connection
     },
 
+    /// List all songs owned by the active address
+    List {
+        #[command(flatten)]
+        conn: Connection
+    },
+
     /// Update song's metadata
     SetSong,
 
@@ -139,6 +145,17 @@ impl MusicCommands {
                 let digest = client.make_song_unavailable(song, owned_kiosk).await?;
 
                 println!("Song ({}) is now unavailable [{}]", song, digest);
+                Ok(())
+            }
+
+            MusicCommands::List {
+                conn
+            } => {
+                let client = Client::new(conn)?;
+                let songs = client.get_all_owned_songs().await?;
+
+                println!("{}", songs);
+
                 Ok(())
             }
 
