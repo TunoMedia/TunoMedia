@@ -1,16 +1,21 @@
 use std::path::PathBuf;
 
 use iota_sdk::{
-    rpc_types::{IotaParsedData, IotaTransactionBlockResponse}, types::{
-        base_types::ObjectID, digests::TransactionDigest, programmable_transaction_builder::ProgrammableTransactionBuilder, transaction::{Argument, ObjectArg, ProgrammableTransaction, TransactionData}, Identifier
+    rpc_types::{IotaParsedData, IotaTransactionBlockResponse},
+    types::{
+        Identifier,
+        base_types::ObjectID,
+        digests::TransactionDigest,
+        programmable_transaction_builder::ProgrammableTransactionBuilder,
+        transaction::{Argument, ObjectArg, ProgrammableTransaction, TransactionData}
     }, wallet_context::WalletContext
 };
 use anyhow::{bail, Result};
 use clap::Parser;
 use log::info;
 
-use crate::{displays::song_listing::{SongList, SongListing}, utils::{
-    execute_transaction, extract_created_cap, extract_created_kiosk, extract_created_kiosk_cap, extract_created_song, get_all_owned_songs, get_initial_shared_version
+use crate::{displays::song_listing::{DisplayListing, SongList, SongListing}, utils::{
+    execute_transaction, extract_created_cap, extract_created_kiosk, extract_created_kiosk_cap, extract_created_song, get_initial_shared_version, query_kiosk_songs, query_owned_songs
 }};
 
 #[derive(Parser)]
@@ -243,11 +248,23 @@ impl Client {
     }
 
     pub(crate) async fn get_all_owned_songs(&self) -> Result<SongList> {
-        let songs = get_all_owned_songs(&self.wallet, self.package_id).await?
+        let songs: Vec<SongListing> = query_owned_songs(&self.wallet, self.package_id).await?
             .into_iter()
             .map(|obj| obj.data.unwrap().content.unwrap())
             .map(|content| match content {
                 IotaParsedData::MoveObject(o) => SongListing::from(o.fields),
+                _ => panic!("IOTA Object Response could not be parsed")
+            }).collect();
+
+        Ok(SongList::from(songs))
+    }
+
+    pub(crate) async fn get_kiosk_songs(&self, kiosk: ObjectID) -> Result<SongList> {
+        let songs: Vec<DisplayListing> = query_kiosk_songs(&self.wallet, kiosk).await?
+            .into_iter()
+            .map(|obj| obj.data.unwrap().content.unwrap())
+            .map(|content| match content {
+                IotaParsedData::MoveObject(o) => DisplayListing::from(o.fields),
                 _ => panic!("IOTA Object Response could not be parsed")
             }).collect();
 

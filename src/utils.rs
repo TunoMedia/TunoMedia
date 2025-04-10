@@ -117,7 +117,7 @@ pub(crate) async fn execute_transaction(
     Ok(response)
 }
 
-pub(crate) async fn get_all_owned_songs(
+pub(crate) async fn query_owned_songs(
     wallet: &WalletContext,
     package_id: ObjectID
 ) -> Result<Vec<IotaObjectResponse>> {
@@ -144,4 +144,30 @@ pub(crate) async fn get_all_owned_songs(
 
     // TODO: Deal with next page
     Ok(response.data)
+}
+
+pub(crate) async fn query_kiosk_songs(
+    wallet: &WalletContext,
+    kiosk: ObjectID
+) -> Result<Vec<IotaObjectResponse>> {
+    let client = wallet.get_client().await?;
+    let fields = client
+        .read_api()
+        .get_dynamic_fields(kiosk, None, None).await?
+        .data;
+    // TODO: Deal with next page
+    
+
+    let mut displays = vec![];
+    for f in fields {
+        displays.push(
+            client.read_api()
+                .get_object_with_options(
+                    f.object_id,
+                    IotaObjectDataOptions::new().with_content()
+                ).await?
+        );
+    }
+
+    Ok(displays)
 }

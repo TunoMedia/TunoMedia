@@ -42,16 +42,64 @@ impl From<IotaMoveStruct> for SongListing {
     }
 }
 
-pub struct SongList(Vec<SongListing>);
+#[derive(Tabled)]
+pub struct DisplayListing {
+    song_id: String,
+    title: String,
+    artist: String,
+    genre: String,
+    price: usize
+}
 
-impl SongList {
-    pub fn from(list: Vec<SongListing>) -> Self {
-        Self(list)
+impl From<IotaMoveStruct> for DisplayListing {
+    fn from(s: IotaMoveStruct) -> Self {
+        Self {
+            song_id: match s.read_dynamic_field_value("song_id") {
+                Some(IotaMoveValue::Address(id)) => id.to_string(),
+                _ => unreachable!("Error parsing id")
+            },
+            title: match s.read_dynamic_field_value("title") {
+                Some(IotaMoveValue::String(title)) => title,
+                _ => unreachable!("Error parsing title")
+            },
+            artist: match s.read_dynamic_field_value("artist") {
+                Some(IotaMoveValue::String(artist)) => artist,
+                _ => unreachable!("Error parsing artist")
+            },
+            genre: match s.read_dynamic_field_value("genre") {
+                Some(IotaMoveValue::String(genre)) => genre,
+                _ => unreachable!("Error parsing genre")
+            },
+            price: match s.read_dynamic_field_value("streaming_price") {
+                Some(IotaMoveValue::String(price)) => price.parse().unwrap(),
+                _ => unreachable!("Error parsing genre")
+            },
+        }
+    }
+}
+
+pub enum SongList {
+    Songs(Vec<SongListing>),
+    Displays(Vec<DisplayListing>)
+}
+
+impl From<Vec<SongListing>> for SongList {
+    fn from(list: Vec<SongListing>) -> Self {
+        Self::Songs(list)
+    }
+}
+
+impl From<Vec<DisplayListing>> for SongList {
+    fn from(list: Vec<DisplayListing>) -> Self {
+        Self::Displays(list)
     }
 }
 
 impl Display for SongList {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", Table::new(&self.0))
+        match self {
+            Self::Songs(list) => write!(f, "{}", Table::new(list)),
+            Self::Displays(list) => write!(f, "{}", Table::new(list))
+        }
     }
 }

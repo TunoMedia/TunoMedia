@@ -2,8 +2,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use crate::{
-    distribution_commands::DistributionCommands,
-    music_commands::MusicCommands
+    distribution_commands::DistributionCommands, kiosk_commands::KioskCommands, music_commands::MusicCommands
 };
 
 #[derive(Parser)]
@@ -18,6 +17,12 @@ pub enum TunoCommands {
     Music {
         #[command(subcommand)]
         cmd: Option<MusicCommands>
+    },
+
+    /// Client for managing kiosk
+    Kiosk {
+        #[command(subcommand)]
+        cmd: Option<KioskCommands>
     },
 }
 
@@ -47,6 +52,20 @@ impl TunoCommands {
                     let mut app = TunoCommands::command();
                     app.build();
                     app.find_subcommand_mut("music").unwrap().print_help()?;
+                }
+
+                Ok(())
+            }
+
+            TunoCommands::Kiosk {
+                cmd
+            } => {
+                if let Some(cmd) = cmd {
+                    cmd.execute().await?;
+                } else {
+                    let mut app = TunoCommands::command();
+                    app.build();
+                    app.find_subcommand_mut("kiosk").unwrap().print_help()?;
                 }
 
                 Ok(())
