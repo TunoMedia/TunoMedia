@@ -1,4 +1,5 @@
 use log::info;
+use tokio::sync::oneshot;
 use tonic::transport::Server;
 use std::path::PathBuf;
 use anyhow::Result;
@@ -34,7 +35,19 @@ impl TunoGrpcServer {
         }
     }
 
-    pub async fn run(&self) -> Result<()> {
+    pub fn get_url(&self) -> String {
+        format!(
+            "http{}://{}:{}",
+            if self.identity.is_some() { "s" } else { "" },
+            self.host,
+            self.port
+        )
+    }
+
+    pub async fn run(
+        &self,
+        shutdown: Option<oneshot::Receiver<()>>
+    ) -> Result<()> {
         let addr = format!("{}:{}", self.host, self.port).parse()?;
 
         let mut server = Server::builder()
@@ -56,11 +69,20 @@ impl TunoGrpcServer {
             .register_encoded_file_descriptor_set(tuno::pb::FILE_DESCRIPTOR_SET)
             .build_v1()?;
 
-        server
+        let served = server
             .add_service(reflection_service)
             .add_service(tonic_web::enable(tuno_service))
-            .serve(addr)
-            .await?;
+            .serve(addr);
+
+        if let Some(handle) = shutdown {
+            let server_handle = tokio::spawn(served);
+            tokio::select! {
+                _ = handle => (),
+                _ = server_handle => unreachable!("Server completed")
+            };
+        } else {
+            served.await?;
+        }
         
         Ok(())
     }

@@ -111,7 +111,7 @@ pub(crate) async fn execute_transaction(
     };
 
     if let IotaExecutionStatus::Failure { error } = effects.status() {
-        bail!(error.to_owned());
+        bail!("Error {}, executing {}", error.to_owned(), response.digest);
     }
 
     Ok(response)

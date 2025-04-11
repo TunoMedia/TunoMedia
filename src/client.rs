@@ -12,9 +12,9 @@ use iota_sdk::{
 };
 use anyhow::{bail, Result};
 use clap::Parser;
-use log::info;
+use log::{error, info, trace};
 
-use crate::{displays::song_listing::{DisplayListing, SongList, SongListing}, utils::{
+use crate::{displays::song_listing::{DisplayListing, SongList, SongListing}, local_storage::get_all_song_ids, utils::{
     execute_transaction, extract_created_cap, extract_created_kiosk, extract_created_kiosk_cap, extract_created_song, get_initial_shared_version, query_kiosk_songs, query_owned_songs
 }};
 
@@ -242,8 +242,100 @@ impl Client {
         Ok(
             self.build_and_execute_transaction_data(
                 ptb.finish()
-            ).await?
-            .digest
+            ).await?.digest
+        )
+    }
+
+    pub(crate) async fn distribute_all(
+        &self,
+        url: &str,
+        streaming_price: usize
+    ) -> Result<Vec<ObjectID>> {
+        let mut distributing = vec![];
+        for song_id in get_all_song_ids()? {
+            let song = ObjectID::from_hex_literal(&song_id)?;
+            match self.distribute(song, url, streaming_price).await {
+                Ok(digest) => {
+                    distributing.push(song);
+                    info!("Registered to distribute {} [{}]", song_id, digest)
+                },
+                Err(e) => error!("Could not register to {}: {}", song_id, e)
+            }
+        }
+
+        Ok(distributing)
+    }
+
+    async fn distribute(
+        &self,
+        song: ObjectID,
+        url: &str,
+        streaming_price: usize
+    ) -> Result<TransactionDigest> {
+        let mut ptb = ProgrammableTransactionBuilder::new();
+        let args = vec![
+            ptb.obj(ObjectArg::ImmOrOwnedObject(
+                self.wallet.get_object_ref(song).await?
+            ))?,
+            ptb.pure(url)?,
+            ptb.pure(streaming_price)?
+
+        ];
+
+        ptb.programmable_move_call(
+            self.package_id,
+            Identifier::new("tuno").unwrap(),
+            Identifier::new("register_as_distributor").unwrap(),
+            vec![],
+            args
+        );
+
+        Ok(
+            self.build_and_execute_transaction_data(
+                ptb.finish()
+            ).await?.digest
+        )
+    }
+
+    pub(crate) async fn undistribute_all(&self) -> Result<Vec<ObjectID>> {
+        let mut undistributed = vec![];
+        for song_id in get_all_song_ids()? {
+            let song = ObjectID::from_hex_literal(&song_id)?;
+            match self.undistribute(song).await {
+                Ok(digest) => {
+                    undistributed.push(song);
+                    info!("unregistered on {} [{}]", song_id, digest);
+                },
+                Err(e) => error!("Could not unregister on {}: {}", song_id, e)
+            }
+        }
+
+        Ok(undistributed)
+    }
+
+    pub(crate) async fn undistribute(
+        &self,
+        song: ObjectID
+    ) -> Result<TransactionDigest> {
+        let mut ptb = ProgrammableTransactionBuilder::new();
+        let args = vec![
+            ptb.obj(ObjectArg::ImmOrOwnedObject(
+                self.wallet.get_object_ref(song).await?
+            ))?,
+        ];
+
+        ptb.programmable_move_call(
+            self.package_id,
+            Identifier::new("tuno").unwrap(),
+            Identifier::new("remove_as_distributor").unwrap(),
+            vec![],
+            args
+        );
+
+        Ok(
+            self.build_and_execute_transaction_data(
+                ptb.finish()
+            ).await?.digest
         )
     }
 
@@ -275,7 +367,7 @@ impl Client {
         &self,
         pt: ProgrammableTransaction
     ) -> Result<IotaTransactionBlockResponse> {
-        info!("building transaction: \n{}", pt.to_string());
+        trace!("building transaction: \n{}", pt.to_string());
         let sender = self.wallet.active_address()?;
         let tx_data = TransactionData::new_programmable(
             sender,
@@ -285,10 +377,10 @@ impl Client {
             self.wallet.get_reference_gas_price().await?,
         );
 
-        info!("Signing {}...", tx_data.digest());
+        trace!("Signing {}...", tx_data.digest());
         let tx = self.wallet.sign_transaction(&tx_data);
 
-        info!("Executing {}...", tx.digest());
+        trace!("Executing {}...", tx.digest());
         execute_transaction(&self.wallet, tx).await
     }
 }
