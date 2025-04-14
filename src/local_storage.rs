@@ -1,5 +1,5 @@
 use std::{fs, path::PathBuf};
-use anyhow::{Ok, Result};
+use anyhow::Result;
 
 const DEFAULT_MEDIA_STORAGE: &str = "media";
 
@@ -26,17 +26,33 @@ pub(crate) fn get_all_song_ids() -> Result<Vec<String>> {
     )
 }
 
-pub(crate) fn store_song(file: &PathBuf, hex_id: &str) -> Result<PathBuf> {
+pub(crate) fn store_song_from_file(file: &PathBuf, hex_id: &str) -> Result<PathBuf> {
     let (p, f) = hex_id.split_at(2);
-    let mut location = PathBuf::from(DEFAULT_MEDIA_STORAGE);
+    let location = get_and_create_media_file(vec![p, f])?;
 
-    location.extend([p]);
-    if !location.is_dir() {
-        fs::create_dir(&location)?;
-    }
-
-    location.extend([f]);
     fs::copy(&file, &location)?;
 
+    Ok(location)
+}
+
+pub(crate) fn store_song_from_bytes(data: Vec<u8>, hex_id: &str) -> Result<PathBuf> {
+    let (p, f) = hex_id.split_at(2);
+    let location = get_and_create_media_file(vec![p, f])?;
+
+    fs::write(&location, data)?;
+
+    Ok(location)
+}
+
+fn get_and_create_media_file(path: Vec<&str>) -> Result<PathBuf> {
+    let mut location = PathBuf::from(DEFAULT_MEDIA_STORAGE);
+    for p in path {
+        if !location.is_dir() {
+            fs::create_dir(&location)?;
+        }
+
+        location.extend([p]);
+    }
+    
     Ok(location)
 }

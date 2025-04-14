@@ -4,7 +4,10 @@ use anyhow::Result;
 use clap::Parser;
 use iota_sdk::types::base_types::ObjectID;
 
-use crate::{client::{Client, Connection, OwnedKiosk, SongMetadata}, local_storage::store_song};
+use crate::{
+    client::{Client, Connection, OwnedKiosk, SongMetadata},
+    local_storage::store_song_from_file
+};
 
 #[derive(Parser)]
 pub enum MusicCommands {
@@ -119,7 +122,7 @@ impl MusicCommands {
                     println!("Status: -");
                 }
 
-                println!("location: {}", store_song(&file, &song.to_hex())?.display());
+                println!("location: {}", store_song_from_file(&file, &song.to_hex())?.display());
                 
                 Ok(())
             }
