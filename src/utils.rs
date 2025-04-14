@@ -171,3 +171,17 @@ pub(crate) async fn query_kiosk_songs(
 
     Ok(displays)
 }
+
+pub(crate) async fn query_object(
+    wallet: &WalletContext,
+    song: ObjectID
+) -> Result<IotaObjectResponse> {
+    let response = wallet.get_client().await?
+        .read_api()
+        .get_object_with_options(
+            song,
+            IotaObjectDataOptions::new().with_content()
+        ).await?;
+
+    Ok(response)
+}

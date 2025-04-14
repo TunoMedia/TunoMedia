@@ -25,7 +25,18 @@ pub enum DistributionCommands {
         conn: Connection
     },
 
+    /// Remove the active address from distribution of a song
     Undistribute {
+        /// Song's object id
+        #[arg(long)]
+        song: ObjectID,
+        
+        #[command(flatten)]
+        conn: Connection
+    },
+
+    /// List of distributors of a song
+    List {
         /// Song's object id
         #[arg(long)]
         song: ObjectID,
@@ -110,6 +121,17 @@ impl DistributionCommands {
                 let digest = client.undistribute(song).await?;
 
                 println!("Song ({}) is not longer being distributed [{}]", song, digest);
+                Ok(())
+            }
+
+            DistributionCommands::List {
+                song,
+                conn
+            } => {
+                let client = Client::new(conn)?;
+                let distributors = client.get_distributors(song).await?;
+
+                println!("{}", distributors);
                 Ok(())
             }
 

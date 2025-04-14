@@ -14,8 +14,8 @@ use anyhow::{bail, Result};
 use clap::Parser;
 use log::{error, info, trace};
 
-use crate::{displays::song_listing::{DisplayListing, SongList, SongListing}, local_storage::get_all_song_ids, utils::{
-    execute_transaction, extract_created_cap, extract_created_kiosk, extract_created_kiosk_cap, extract_created_song, get_initial_shared_version, query_kiosk_songs, query_owned_songs
+use crate::{local_storage::get_all_song_ids, types::{DistributionMap, Song, SongDisplay, SongDisplayList, SongList}, utils::{
+    execute_transaction, extract_created_cap, extract_created_kiosk, extract_created_kiosk_cap, extract_created_song, get_initial_shared_version, query_object, query_kiosk_songs, query_owned_songs
 }};
 
 #[derive(Parser)]
@@ -340,27 +340,40 @@ impl Client {
     }
 
     pub(crate) async fn get_all_owned_songs(&self) -> Result<SongList> {
-        let songs: Vec<SongListing> = query_owned_songs(&self.wallet, self.package_id).await?
+        let songs = query_owned_songs(&self.wallet, self.package_id).await?
             .into_iter()
             .map(|obj| obj.data.unwrap().content.unwrap())
             .map(|content| match content {
-                IotaParsedData::MoveObject(o) => SongListing::from(o.fields),
+                IotaParsedData::MoveObject(o) => Song::from(o.fields),
                 _ => panic!("IOTA Object Response could not be parsed")
             }).collect();
 
-        Ok(SongList::from(songs))
+        Ok(songs)
     }
 
-    pub(crate) async fn get_kiosk_songs(&self, kiosk: ObjectID) -> Result<SongList> {
-        let songs: Vec<DisplayListing> = query_kiosk_songs(&self.wallet, kiosk).await?
+    pub(crate) async fn get_kiosk_songs(&self, kiosk: ObjectID) -> Result<SongDisplayList> {
+        let songs = query_kiosk_songs(&self.wallet, kiosk).await?
             .into_iter()
             .map(|obj| obj.data.unwrap().content.unwrap())
             .map(|content| match content {
-                IotaParsedData::MoveObject(o) => DisplayListing::from(o.fields),
+                IotaParsedData::MoveObject(o) => SongDisplay::from(o.fields),
                 _ => panic!("IOTA Object Response could not be parsed")
             }).collect();
 
-        Ok(SongList::from(songs))
+        Ok(songs)
+    }
+
+    pub(crate) async fn get_distributors(&self, song: ObjectID) -> Result<DistributionMap> {
+        let Some(data) = query_object(&self.wallet, song).await?.data else {
+            bail!("Song's data could not be found");
+        };
+
+        match data.content {
+            Some(IotaParsedData::MoveObject(o)) => Ok(
+                Song::from(o.fields).distributors
+            ),
+            _ => bail!("IOTA Object Response could not be parsed")
+        }
     }
 
     async fn build_and_execute_transaction_data(
