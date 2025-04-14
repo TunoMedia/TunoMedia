@@ -24,7 +24,6 @@ module tuno::utils {
         {
             let creator_cap = test_scenario::take_from_sender<CreatorCap>(scenario);
             tuno::create_song(
-                &creator_cap,
                 b"Test Song",
                 b"Test Artist",
                 b"Test Album",
@@ -32,6 +31,10 @@ module tuno::utils {
                 b"Electronic",
                 b"http://example.com/cover.jpg",
                 get_streaming_price(),
+                16 * 1024 * 1024,
+                90,
+                vector[vector[1, 2, 3], vector[4, 5, 6]],
+                &creator_cap,
                 test_scenario::ctx(scenario)
             );
             test_scenario::return_to_sender(scenario, creator_cap);

@@ -58,6 +58,9 @@ module tuno::tuno {
         cover_art_url: String,
         streaming_price: u64,
         owner: address,
+        length: u64,
+        duration: u64,
+        signature: vector<vector<u8>>,
         creator_balance: Balance<IOTA>,
         distributors: VecMap<address, Distributor>,
         display_id: Option<ID>
@@ -101,7 +104,6 @@ module tuno::tuno {
     }
     
     public entry fun create_song(
-        _creator_cap: &CreatorCap,
         title: vector<u8>,
         artist: vector<u8>,
         album: vector<u8>,
@@ -109,6 +111,10 @@ module tuno::tuno {
         genre: vector<u8>,
         cover_art_url: vector<u8>,
         streaming_price: u64,
+        length: u64,
+        duration: u64,
+        signature: vector<vector<u8>>,
+        _creator_cap: &CreatorCap,
         ctx: &mut TxContext
     ) {
         let sender = tx_context::sender(ctx);
@@ -121,6 +127,9 @@ module tuno::tuno {
             genre: string::utf8(genre),
             cover_art_url: string::utf8(cover_art_url),
             owner: sender,
+            length,
+            duration,
+            signature,
             streaming_price,
             creator_balance: balance::zero(),
             distributors: vec_map::empty(),
