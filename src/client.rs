@@ -14,9 +14,18 @@ use anyhow::{bail, Result};
 use clap::Parser;
 use log::{error, info, trace};
 
-use crate::{local_storage::{get_all_song_ids, FileMetadata}, types::{DistributionMap, Song, SongDisplay, SongDisplayList, SongList}, utils::{
-    execute_transaction, extract_created_cap, extract_created_kiosk, extract_created_kiosk_cap, extract_created_song, get_initial_shared_version, query_kiosk_songs, query_object, query_owned_songs
-}};
+use crate::local_storage::{get_all_song_ids, FileMetadata};
+use crate::types::{Song, SongDisplay, SongDisplayList, SongList};
+use crate::utils::{
+    execute_transaction,
+    extract_created_cap,
+    extract_created_kiosk,
+    extract_created_kiosk_cap,
+    extract_created_song,
+    get_initial_shared_version,
+    query_kiosk_songs, query_object,
+    query_owned_songs
+};
 
 #[derive(Parser)]
 pub struct Connection {
@@ -366,17 +375,16 @@ impl Client {
         Ok(songs)
     }
 
-    pub(crate) async fn get_distributors(&self, song: ObjectID) -> Result<DistributionMap> {
+    pub(crate) async fn get_song(&self, song: ObjectID) -> Result<Song> {
         let Some(data) = query_object(&self.wallet, song).await?.data else {
             bail!("Song's data could not be found");
         };
 
-        match data.content {
-            Some(IotaParsedData::MoveObject(o)) => Ok(
-                Song::from(o.fields).distributors
-            ),
-            _ => bail!("IOTA Object Response could not be parsed")
-        }
+        let Some(IotaParsedData::MoveObject(o)) = data.content else {
+            bail!("IOTA Object Response could not be parsed")
+        };
+
+        Ok(Song::from(o.fields))
     }
 
     async fn build_and_execute_transaction_data(

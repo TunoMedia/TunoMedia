@@ -1,8 +1,7 @@
-use std::io::{BufReader, Read};
+use std::io::BufReader;
 use std::{fs, path::PathBuf};
 use anyhow::{bail, Result};
 
-use sha2::{Sha256, Digest};
 use symphonia::default::get_probe;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::probe::Hint;
@@ -10,7 +9,8 @@ use symphonia::core::probe::Hint;
 use iota_sdk::types::programmable_transaction_builder::ProgrammableTransactionBuilder;
 use iota_sdk::types::transaction::Argument;
 
-const DEFAULT_MEDIA_STORAGE: &str = "media";
+use crate::constants::DEFAULT_MEDIA_STORAGE;
+use crate::types::Signature;
 
 #[derive(Debug)]
 pub struct FileMetadata {
@@ -24,7 +24,7 @@ impl From<&PathBuf> for FileMetadata {
         Self {
             length: fs::metadata(path).expect("Error parsing metadata").len() as usize,
             duration: compute_duration(path).expect("Error computing duration") as usize,
-            signature: compute_signature(path).expect("Error computing duration")
+            signature: Signature::from(path).sig
         }
     }
 }
@@ -64,24 +64,6 @@ fn compute_duration(path: &PathBuf) -> Result<u64> {
     }
 
     bail!("Error extracting codec parameters")
-}
-
-fn compute_signature(path: &PathBuf) -> Result<Vec<Vec<u8>>> {
-    let file = fs::File::open(path).expect("failed to open media");
-    let mut reader = BufReader::new(file);
-    let mut sig = vec![];
-
-    let mut buf = vec![0; 512*512];
-    while let Ok(n) = reader.read(&mut buf) {
-        if n == 0 { break }
-
-        let mut hasher = Sha256::new();
-        hasher.update(buf[..n].to_vec());
-
-        sig.push(hasher.finalize().to_vec());
-    }
-
-    Ok(sig)
 }
 
 pub(crate) fn get_local_song_reader(hex_id: &str) -> Result<BufReader<fs::File>> {

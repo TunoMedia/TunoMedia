@@ -1,11 +1,17 @@
 use std::collections::BTreeMap;
+use std::io::{BufReader, Read};
+use std::{fs, path::PathBuf};
+use sha2::{Sha256, Digest};
 
 use iota_sdk::{
     rpc_types::{IotaMoveStruct, IotaMoveValue},
     types::base_types::{IotaAddress, ObjectID}
 };
 
+use crate::constants::TUNO_BASE_CHUNK_SIZE;
+
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct Song {
     pub id: ObjectID,
     pub title: String,
@@ -18,7 +24,7 @@ pub struct Song {
     pub owner: IotaAddress,
     pub length: usize,
     pub duration: usize,
-    pub signature: Vec<Vec<u8>>,
+    pub signature: Signature,
     pub creator_balance: usize,
     pub distributors: DistributionMap,
     pub display_id: Option<ObjectID>,
@@ -38,7 +44,7 @@ impl From<IotaMoveStruct> for Song {
             owner: parse_address(&s, "owner"),
             length: parse_string(&s, "length").parse().unwrap(),
             duration: parse_string(&s, "duration").parse().unwrap(),
-            signature: vec![vec![]], // TODO: implement
+            signature: Signature::from(parse_vec(&s, "signature")),
             creator_balance: parse_string(&s, "creator_balance").parse().unwrap(),
             distributors: DistributionMap::from(parse_struct(&s, "distributors")),
             display_id: match s.read_dynamic_field_value("display_id") {
@@ -55,6 +61,75 @@ pub struct SongList(pub Vec<Song>);
 impl FromIterator<Song> for SongList {
     fn from_iter<T: IntoIterator<Item = Song>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct Signature {
+    pub sig: Vec<Vec<u8>>,
+    _index: usize
+}
+
+impl From<&PathBuf> for Signature {
+    fn from(path: &PathBuf) -> Self {
+        let file = fs::File::open(path).expect("failed to open media");
+        let mut reader = BufReader::new(file);
+        let mut sig = vec![];
+    
+        let mut buf = vec![0; TUNO_BASE_CHUNK_SIZE];
+        while let Ok(n) = reader.read(&mut buf) {
+            if n == 0 { break }
+    
+            let mut hasher = Sha256::new();
+            hasher.update(buf[..n].to_vec());
+    
+            sig.push(hasher.finalize().to_vec());
+        }
+    
+        Self { sig: sig, _index: 0 }
+    }
+}
+
+impl From<Vec<IotaMoveValue>> for Signature {
+    fn from(sig: Vec<IotaMoveValue>) -> Self {
+        Self {
+            sig: sig.iter().map(|s| match s {
+                IotaMoveValue::Vector(inner) => inner.iter().map(|i| match i {
+                    IotaMoveValue::Number(n) => *n as u8,
+                    _ => panic!("Error parsing signature number from {:?}", inner)
+                }).collect(),
+                _ => panic!("Error parsing inner signature from {s}")
+            }).collect(),
+            _index: 0
+        }
+    }
+}
+
+impl Signature {
+    pub(crate) fn consume_data(&mut self, data: Vec<u8>) -> Option<Vec<u8>> {
+        let mut chunks = data.chunks(TUNO_BASE_CHUNK_SIZE);
+        while let Some(d) = chunks.next() {
+            if !self.check_sig_at(d.to_vec(), self._index) {
+                return None;
+            }
+
+            self._index += 1;
+        }
+
+        Some(data)
+    }
+
+    pub(crate) fn check_sig_at(
+        &self,
+        data: Vec<u8>,
+        index: usize
+    ) -> bool {
+        assert!(data.len() == TUNO_BASE_CHUNK_SIZE);
+
+        let mut hasher = Sha256::new();
+        hasher.update(data);
+
+        self.sig.get(index).unwrap() == &hasher.finalize().to_vec()
     }
 }
 
@@ -91,6 +166,7 @@ impl FromIterator<SongDisplay> for SongDisplayList {
     }
 }
 
+#[derive(Debug)]
 pub struct Distributor {
     pub url: String,
     pub joined_at: usize,
@@ -109,6 +185,7 @@ impl From<IotaMoveStruct> for Distributor {
     }
 }
 
+#[derive(Debug)]
 pub struct DistributionMap(pub BTreeMap<IotaAddress, Distributor>);
 
 impl From<IotaMoveStruct> for DistributionMap {

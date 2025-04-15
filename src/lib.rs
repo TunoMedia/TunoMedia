@@ -8,3 +8,4 @@ pub(crate) mod utils;
 pub(crate) mod local_storage;
 pub(crate) mod displays;
 pub(crate) mod types;
+pub(crate) mod constants;

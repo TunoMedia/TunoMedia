@@ -6,11 +6,10 @@ use iota_sdk::types::base_types::ObjectID;
 use tokio::{signal, sync::oneshot};
 use tokio_stream::StreamExt;
 
-use crate::{
-    server::TunoGrpcServer,
-    client::{Client, Connection},
-    local_storage::{store_song_from_bytes, store_song_from_file}
-};
+use crate::server::TunoGrpcServer;
+use crate::client::{Client, Connection};
+use crate::local_storage::{store_song_from_bytes, store_song_from_file};
+use crate::constants::TUNO_BASE_CHUNK_SIZE;
 
 pub mod pb {
     tonic::include_proto!("tuno");
@@ -135,7 +134,7 @@ impl DistributionCommands {
                 conn
             } => {
                 let client = Client::new(conn)?;
-                let distributors = client.get_distributors(song).await?;
+                let distributors = client.get_song(song).await?.distributors;
 
                 println!("{}", distributors);
                 Ok(())
@@ -156,30 +155,34 @@ impl DistributionCommands {
                 conn
             } => {
                 let client = Client::new(conn)?;
-                let distributors = client.get_distributors(song).await?;
-                let (
-                    address,
-                    distributor
-                ) = distributors.0.first_key_value().unwrap();
+                let mut obj = client.get_song(song).await?;
 
-                let mut tuno_client = pb::tuno_client::TunoClient::connect(
+                let (
+                    _, // TODO: use address to send payment
+                    distributor
+                ) = obj.distributors.0.first_key_value().unwrap();
+
+                let mut channel = pb::tuno_client::TunoClient::connect(
                     distributor.url.clone()
                 ).await?;
 
-                let mut stream = tuno_client.stream_song(
+                let mut stream = channel.stream_song(
                     pb::SongStreamRequest {
                         object_id: song.to_hex(),
-                        block_size: 1024 * 1024
+                        block_size: 4 * TUNO_BASE_CHUNK_SIZE as u32
                     }
                 ).await?
                 .into_inner();
 
-                let mut data = vec![];
+                let mut data: Vec<u8> = vec![];
                 while let Some(item) = stream.next().await {
-                    // TODO: verify file's signature with on-chain metadata
-                    data.append(&mut item.unwrap().data);
+                    match obj.signature.consume_data(item.unwrap().data) {
+                        Some(mut d) => data.append(&mut d),
+                        None => panic!("Received data cannot be verified succesfully")
+                    };
                 }
             
+                println!("File's signature verified");
                 println!("location: {}", store_song_from_bytes(data, &song.to_hex())?.display());
 
                 Ok(())
