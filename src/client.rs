@@ -14,8 +14,8 @@ use anyhow::{bail, Result};
 use clap::Parser;
 use log::{error, info, trace};
 
-use crate::{local_storage::get_all_song_ids, types::{DistributionMap, Song, SongDisplay, SongDisplayList, SongList}, utils::{
-    execute_transaction, extract_created_cap, extract_created_kiosk, extract_created_kiosk_cap, extract_created_song, get_initial_shared_version, query_object, query_kiosk_songs, query_owned_songs
+use crate::{local_storage::{get_all_song_ids, FileMetadata}, types::{DistributionMap, Song, SongDisplay, SongDisplayList, SongList}, utils::{
+    execute_transaction, extract_created_cap, extract_created_kiosk, extract_created_kiosk_cap, extract_created_song, get_initial_shared_version, query_kiosk_songs, query_object, query_owned_songs
 }};
 
 #[derive(Parser)]
@@ -161,15 +161,18 @@ impl Client {
     pub(crate) async fn create_song(
         &self,
         cap: ObjectID,
-        metadata: SongMetadata
+        song_md: SongMetadata,
+        file_md: FileMetadata,
     ) -> Result<(ObjectID, TransactionDigest)> {
         let mut ptb = ProgrammableTransactionBuilder::new();
-        let mut args = vec![
+        
+        let mut args = song_md.as_arguments(&mut ptb)?;
+        args.append(&mut file_md.as_arguments(&mut ptb)?);
+        args.push(
             ptb.obj(ObjectArg::ImmOrOwnedObject(
                 self.wallet.get_object_ref(cap).await?
             ))?
-        ];
-        args.append(&mut metadata.as_arguments(&mut ptb)?);
+        );
 
         ptb.programmable_move_call(
             self.package_id,
@@ -386,7 +389,7 @@ impl Client {
             sender,
             self.wallet.get_all_gas_objects_owned_by_address(sender).await?,
             pt,
-            10_000_000,
+            50_000_000,
             self.wallet.get_reference_gas_price().await?,
         );
 

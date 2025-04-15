@@ -20,6 +20,8 @@ clap = { version = "4.5.35", features = ["derive", "env"] }
 dirs = "6.0.0"
 dotenv = "0.15.0"
 tabled = "0.18.0"
+symphonia = { version = "0.5.4", features = ["mp3"] }
+sha2 = "0.10.8"
 
 [build-dependencies]
 tonic-build = "0.12.3"

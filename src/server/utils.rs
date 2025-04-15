@@ -1,8 +1,6 @@
 use tonic::transport::{Identity, ServerTlsConfig};
-use std::{fs, io::BufReader, path::PathBuf};
+use std::{fs, path::PathBuf};
 use anyhow::Result;
-
-use crate::local_storage::get_local_song_file;
 
 pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<ServerTlsConfig> {
     if !cert_path.exists() {
@@ -19,12 +17,4 @@ pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<Server
     let identity = Identity::from_pem(cert_data, key_data);
     
     Ok(ServerTlsConfig::new().identity(identity))
-}
-
-pub fn get_song_reader(object_id: &str) -> Result<BufReader<fs::File>> {
-    Ok(
-        BufReader::new(
-            get_local_song_file(object_id)?
-        )
-    )
 }

@@ -4,7 +4,7 @@ use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream};
 use tonic::{Request, Response, Status};
 
-use crate::server::utils::get_song_reader;
+use crate::local_storage::get_local_song_reader;
 
 pub mod pb {
     tonic::include_proto!("tuno");
@@ -40,7 +40,7 @@ impl pb::tuno_server::Tuno for TunoService {
         trace!("Received fetch request: {:?}", object_id);
         
         let mut data = vec![];
-        if let Ok(mut reader) = get_song_reader(&object_id) {
+        if let Ok(mut reader) = get_local_song_reader(&object_id) {
             if reader.read_to_end(&mut data).is_ok() {
                 return Ok(Response::new(pb::SongBytes { data }));
             } 
@@ -57,9 +57,8 @@ impl pb::tuno_server::Tuno for TunoService {
         let object_id = song_stream_request.object_id;
         trace!("Received stream request: {:?}", object_id);
 
-        let mut reader = match get_song_reader(&object_id) {
-            Ok(reader) => reader,
-            Err(_) => return Err(Status::not_found(format!("Invalid object_id: {}", object_id)))
+        let Ok(mut reader) = get_local_song_reader(&object_id) else {
+            return Err(Status::not_found(format!("Invalid object_id: {}", object_id)));
         };
 
         let (tx, rx) = mpsc::channel(128);

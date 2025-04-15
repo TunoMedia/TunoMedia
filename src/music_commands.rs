@@ -6,7 +6,7 @@ use iota_sdk::types::base_types::ObjectID;
 
 use crate::{
     client::{Client, Connection, OwnedKiosk, SongMetadata},
-    local_storage::store_song_from_file
+    local_storage::{store_song_from_file, FileMetadata}
 };
 
 #[derive(Parser)]
@@ -32,7 +32,7 @@ pub enum MusicCommands {
         owned_kiosk: Option<OwnedKiosk>,
 
         #[command(flatten)]
-        metadata: SongMetadata,
+        song_md: SongMetadata,
         #[command(flatten)]
         conn: Connection
     },
@@ -100,15 +100,16 @@ impl MusicCommands {
                 file,
                 owned_kiosk,
                 cap,
-                metadata,
+                song_md,
                 conn
             } => {
+                let file_md = FileMetadata::from(&file);
                 let client = Client::new(conn)?;
 
                 let (
                     song,
                     digest
-                ) = client.create_song(cap, metadata).await?;
+                ) = client.create_song(cap, song_md, file_md).await?;
 
                 println!("Song succesfully published [{}]", digest);
                 println!("ID: {}", song);

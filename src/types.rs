@@ -1,6 +1,9 @@
 use std::collections::BTreeMap;
 
-use iota_sdk::{rpc_types::{IotaMoveStruct, IotaMoveValue}, types::base_types::{IotaAddress, ObjectID}};
+use iota_sdk::{
+    rpc_types::{IotaMoveStruct, IotaMoveValue},
+    types::base_types::{IotaAddress, ObjectID}
+};
 
 #[allow(dead_code)]
 pub struct Song {
@@ -13,6 +16,9 @@ pub struct Song {
     pub cover_art_url: String,
     pub streaming_price: usize,
     pub owner: IotaAddress,
+    pub length: usize,
+    pub duration: usize,
+    pub signature: Vec<Vec<u8>>,
     pub creator_balance: usize,
     pub distributors: DistributionMap,
     pub display_id: Option<ObjectID>,
@@ -30,6 +36,9 @@ impl From<IotaMoveStruct> for Song {
             cover_art_url: parse_string(&s, "cover_art_url"),
             streaming_price: parse_string(&s, "streaming_price").parse().unwrap(),
             owner: parse_address(&s, "owner"),
+            length: parse_string(&s, "length").parse().unwrap(),
+            duration: parse_string(&s, "duration").parse().unwrap(),
+            signature: vec![vec![]], // TODO: implement
             creator_balance: parse_string(&s, "creator_balance").parse().unwrap(),
             distributors: DistributionMap::from(parse_struct(&s, "distributors")),
             display_id: match s.read_dynamic_field_value("display_id") {
