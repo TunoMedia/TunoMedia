@@ -24,7 +24,7 @@ pub struct Song {
     pub owner: IotaAddress,
     pub length: usize,
     pub duration: usize,
-    pub signature: Signature,
+    pub signature: TunoSignature,
     pub creator_balance: usize,
     pub distributors: DistributionMap,
     pub display_id: Option<ObjectID>,
@@ -44,7 +44,7 @@ impl From<IotaMoveStruct> for Song {
             owner: parse_address(&s, "owner"),
             length: parse_string(&s, "length").parse().unwrap(),
             duration: parse_string(&s, "duration").parse().unwrap(),
-            signature: Signature::from(parse_vec(&s, "signature")),
+            signature: TunoSignature::from(parse_vec(&s, "signature")),
             creator_balance: parse_string(&s, "creator_balance").parse().unwrap(),
             distributors: DistributionMap::from(parse_struct(&s, "distributors")),
             display_id: match s.read_dynamic_field_value("display_id") {
@@ -65,12 +65,12 @@ impl FromIterator<Song> for SongList {
 }
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct Signature {
+pub(crate) struct TunoSignature {
     pub sig: Vec<Vec<u8>>,
     _index: usize
 }
 
-impl From<&PathBuf> for Signature {
+impl From<&PathBuf> for TunoSignature {
     fn from(path: &PathBuf) -> Self {
         let file = fs::File::open(path).expect("failed to open media");
         let mut reader = BufReader::new(file);
@@ -90,7 +90,7 @@ impl From<&PathBuf> for Signature {
     }
 }
 
-impl From<Vec<IotaMoveValue>> for Signature {
+impl From<Vec<IotaMoveValue>> for TunoSignature {
     fn from(sig: Vec<IotaMoveValue>) -> Self {
         Self {
             sig: sig.iter().map(|s| match s {
@@ -105,7 +105,7 @@ impl From<Vec<IotaMoveValue>> for Signature {
     }
 }
 
-impl Signature {
+impl TunoSignature {
     pub(crate) fn consume_data(&mut self, data: Vec<u8>) -> Option<Vec<u8>> {
         let mut chunks = data.chunks(TUNO_BASE_CHUNK_SIZE);
         while let Some(d) = chunks.next() {

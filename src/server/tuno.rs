@@ -1,10 +1,12 @@
 use std::{io::Read, pin::Pin};
-use log::trace;
+use log::{error, trace};
 use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream};
 use tonic::{Request, Response, Status};
 
-use crate::local_storage::get_local_song_reader;
+use iota_sdk::types::base_types::ObjectID;
+
+use crate::{local_storage::get_local_song_reader, server::utils::verify_payment};
 
 pub mod pb {
     tonic::include_proto!("tuno");
@@ -12,7 +14,15 @@ pub mod pb {
         tonic::include_file_descriptor_set!("tuno_descriptor");
 }
 
-pub struct TunoService {}
+pub(crate) struct TunoService {
+    package_id: ObjectID
+}
+
+impl TunoService {
+    pub(crate) fn new(package_id: ObjectID) -> Self {
+        Self { package_id }
+    }
+}
 
 #[tonic::async_trait]
 impl pb::tuno_server::Tuno for TunoService {
@@ -36,17 +46,33 @@ impl pb::tuno_server::Tuno for TunoService {
         &self,
         request: Request<pb::SongRequest>
     ) -> Result<Response<pb::SongBytes>, Status> {
-        let object_id = request.into_inner().object_id;
-        trace!("Received fetch request: {:?}", object_id);
-        
+        let song_id = match verify_payment(request.into_inner().raw_transaction, self.package_id) {
+            Ok(song_id) => song_id,
+            Err(e) => {
+                error!("Error verifying tx: {e}");
+                return Err(Status::permission_denied("Transaction could not be verified"));
+            }
+        };
+
+        let mut reader = match get_local_song_reader(&song_id) {
+            Ok(reader) => reader,
+            Err(e) => {
+                error!("Error while seeking {song_id}: {e}");
+                return Err(Status::not_found(format!("Unknown object_id: {song_id}")));
+            }
+        };
+
         let mut data = vec![];
-        if let Ok(mut reader) = get_local_song_reader(&object_id) {
-            if reader.read_to_end(&mut data).is_ok() {
-                return Ok(Response::new(pb::SongBytes { data }));
-            } 
+        match reader.read_to_end(&mut data) {
+            Ok(_) => {
+                trace!("Succesful fetch request for {song_id}");
+                Ok(Response::new(pb::SongBytes { data }))
+            },
+            Err(e) => {
+                error!("Error reading {song_id}: {e}");
+                Err(Status::not_found(format!("Invalid object_id: {}", song_id)))
+            }
         }
-        
-        Err(Status::not_found(format!("Invalid object_id: {}", object_id)))
     }
 
     async fn stream_song(
@@ -54,28 +80,44 @@ impl pb::tuno_server::Tuno for TunoService {
         request: Request<pb::SongStreamRequest>
     ) -> Result<Response<Self::StreamSongStream>, Status> {
         let song_stream_request = request.into_inner();
-        let object_id = song_stream_request.object_id;
-        trace!("Received stream request: {:?}", object_id);
+        let Some(pb::SongRequest { raw_transaction }) = song_stream_request.req else {
+            error!("req parameter not found");
+            return Err(Status::invalid_argument("req"));
+        };
+        
+        let song_id = match verify_payment(raw_transaction, self.package_id) {
+            Ok(song_id) => song_id,
+            Err(e) => {
+                error!("Error verifying tx: {e}");
+                return Err(Status::permission_denied("Transaction could not be verified"));
+            }
+        };
 
-        let Ok(mut reader) = get_local_song_reader(&object_id) else {
-            return Err(Status::not_found(format!("Invalid object_id: {}", object_id)));
+        let mut reader = match get_local_song_reader(&song_id) {
+            Ok(reader) => reader,
+            Err(e) => {
+                error!("Error while seeking {song_id}: {e}");
+                return Err(Status::not_found(format!("Unknown object_id: {song_id}")));
+            }
         };
 
         let (tx, rx) = mpsc::channel(128);
         tokio::spawn(async move {
             let mut buf = vec![0; song_stream_request.block_size as usize];
 
-            trace!("Streaming song: {:?}", object_id);
             while let Ok(n) = reader.read(&mut buf) {
                 if n == 0 { break }
-                if tx.send(Ok(pb::SongBytes { data: buf[..n].to_vec() })).await.is_err() {
-                    break;
+                match tx.send(Ok(pb::SongBytes { data: buf[..n].to_vec() })).await {
+                    Ok(_) => continue,
+                    Err(e) => {
+                        error!("Error while streaming: {e}");
+                        break
+                    }
                 }
             }
-
-            trace!("Done!");
         });
 
+        trace!("Finished stream request for {song_id}");
         Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
     }
 }

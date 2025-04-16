@@ -1,3 +1,4 @@
+use iota_sdk::types::base_types::ObjectID;
 use log::info;
 use tokio::sync::oneshot;
 use tonic::transport::Server;
@@ -12,7 +13,8 @@ mod utils;
 pub struct TunoGrpcServer {
     host: String,
     port: u16,
-    identity: Option<TunoIdentity>
+    identity: Option<TunoIdentity>,
+    package_id: ObjectID
 }
 
 #[derive(Clone)]
@@ -22,7 +24,7 @@ struct TunoIdentity {
 }
 
 impl TunoGrpcServer {
-    pub fn new(host: String, port: u16, cert_dir: Option<PathBuf>) -> Self {
+    pub fn new(host: String, port: u16, cert_dir: Option<PathBuf>, package_id: ObjectID) -> Self {
         Self {
             host,
             port,
@@ -31,7 +33,8 @@ impl TunoGrpcServer {
                     cert_path: dir.join("fullchain.pem"),
                     key_path: dir.join("privkey.pem")
                 })
-            )
+            ),
+            package_id
         }
     }
 
@@ -64,7 +67,7 @@ impl TunoGrpcServer {
             }
         };
 
-        let tuno_service = TunoServer::new(tuno::TunoService {});
+        let tuno_service = TunoServer::new(tuno::TunoService::new(self.package_id));
         let reflection_service = tonic_reflection::server::Builder::configure()
             .register_encoded_file_descriptor_set(tuno::pb::FILE_DESCRIPTOR_SET)
             .build_v1()?;

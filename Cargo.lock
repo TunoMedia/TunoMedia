@@ -7767,6 +7767,7 @@ name = "tuno-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bcs",
  "clap",
  "dirs 6.0.0",
  "dotenv",

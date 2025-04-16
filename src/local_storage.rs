@@ -10,7 +10,7 @@ use iota_sdk::types::programmable_transaction_builder::ProgrammableTransactionBu
 use iota_sdk::types::transaction::Argument;
 
 use crate::constants::DEFAULT_MEDIA_STORAGE;
-use crate::types::Signature;
+use crate::types::TunoSignature;
 
 #[derive(Debug)]
 pub struct FileMetadata {
@@ -24,7 +24,7 @@ impl From<&PathBuf> for FileMetadata {
         Self {
             length: fs::metadata(path).expect("Error parsing metadata").len() as usize,
             duration: compute_duration(path).expect("Error computing duration") as usize,
-            signature: Signature::from(path).sig
+            signature: TunoSignature::from(path).sig
         }
     }
 }

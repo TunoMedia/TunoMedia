@@ -10,7 +10,7 @@ use crate::server::TunoGrpcServer;
 use crate::client::{Client, Connection};
 use crate::local_storage::{store_song_from_bytes, store_song_from_file};
 use crate::constants::TUNO_BASE_CHUNK_SIZE;
-use crate::types::Signature;
+use crate::types::TunoSignature;
 
 pub mod pb {
     tonic::include_proto!("tuno");
@@ -91,7 +91,8 @@ impl DistributionCommands {
                 let server = TunoGrpcServer::new(
                     rpc_ip,
                     rpc_port,
-                    cert_dir
+                    cert_dir,
+                    conn.package_id
                 );
 
                 let client = Client::new(conn)?;
@@ -153,9 +154,8 @@ impl DistributionCommands {
                 let client = Client::new(conn)?;
                 let obj = client.get_song(song).await?;
 
-                if Signature::from(&file) != obj.signature {
-                    println!("File's signature cannot be verified succesfully");
-                    return Ok(());
+                if TunoSignature::from(&file) != obj.signature {
+                    panic!("File's signature cannot be verified succesfully");
                 }
 
                 println!("File's signature verified");
@@ -172,18 +172,19 @@ impl DistributionCommands {
                 let mut obj = client.get_song(song).await?;
 
                 let (
-                    _, // TODO: use address to send payment
+                    address,
                     distributor
                 ) = obj.distributors.0.first_key_value().unwrap();
 
+                let tx = client.get_payment_transaction(song, address).await?;
                 let mut channel = pb::tuno_client::TunoClient::connect(
                     distributor.url.clone()
                 ).await?;
 
                 let mut stream = channel.stream_song(
                     pb::SongStreamRequest {
-                        object_id: song.to_hex(),
-                        block_size: 4 * TUNO_BASE_CHUNK_SIZE as u32
+                        req: Some(pb::SongRequest { raw_transaction: bcs::to_bytes(&tx)? }),
+                        block_size: 4 * TUNO_BASE_CHUNK_SIZE as u32,
                     }
                 ).await?
                 .into_inner();

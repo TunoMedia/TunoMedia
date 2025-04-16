@@ -1,15 +1,13 @@
 use std::path::PathBuf;
 
-use iota_sdk::{
-    rpc_types::{IotaParsedData, IotaTransactionBlockResponse},
-    types::{
-        Identifier,
-        base_types::ObjectID,
-        digests::TransactionDigest,
-        programmable_transaction_builder::ProgrammableTransactionBuilder,
-        transaction::{Argument, ObjectArg, ProgrammableTransaction, TransactionData}
-    }, wallet_context::WalletContext
-};
+use iota_sdk::rpc_types::{IotaParsedData, IotaTransactionBlockResponse};
+use iota_sdk::types::Identifier;
+use iota_sdk::types::digests::TransactionDigest;
+use iota_sdk::types::base_types::{IotaAddress, ObjectID};
+use iota_sdk::types::programmable_transaction_builder::ProgrammableTransactionBuilder;
+use iota_sdk::types::transaction::{Argument, ObjectArg, ProgrammableTransaction, Transaction, TransactionData};
+use iota_sdk::wallet_context::WalletContext;
+
 use anyhow::{bail, Result};
 use clap::Parser;
 use log::{error, info, trace};
@@ -35,7 +33,7 @@ pub struct Connection {
 
     /// Object ID of the game's package.
     #[arg(long, short, env = "PKG")]
-    package_id: ObjectID,
+    pub package_id: ObjectID,
 }
 
 #[derive(Parser)]
@@ -351,6 +349,35 @@ impl Client {
         )
     }
 
+    pub(crate) async fn get_payment_transaction(
+        &self,
+        song: ObjectID,
+        distributor: &IotaAddress
+    ) -> Result<Transaction> {
+        let mut ptb = ProgrammableTransactionBuilder::new();
+        let args = vec![
+            ptb.obj(ObjectArg::ImmOrOwnedObject(
+                self.wallet.get_object_ref(song).await?
+            ))?,
+            // TODO: add distributor
+            // TODO: add splitted coin with exact amount
+        ];
+
+        ptb.programmable_move_call(
+            self.package_id,
+            Identifier::new("tuno").unwrap(),
+            Identifier::new("pay_royalties").unwrap(),
+            vec![],
+            args
+        );
+
+        Ok(
+            self.build_and_sign_transaction_data(
+                ptb.finish()
+            ).await?
+        )
+    }
+
     pub(crate) async fn get_all_owned_songs(&self) -> Result<SongList> {
         let songs = query_owned_songs(&self.wallet, self.package_id).await?
             .into_iter()
@@ -387,10 +414,10 @@ impl Client {
         Ok(Song::from(o.fields))
     }
 
-    async fn build_and_execute_transaction_data(
+    pub(crate) async fn build_and_sign_transaction_data(
         &self,
         pt: ProgrammableTransaction
-    ) -> Result<IotaTransactionBlockResponse> {
+    ) -> Result<Transaction> {
         trace!("building transaction: \n{}", pt.to_string());
         let sender = self.wallet.active_address()?;
         let tx_data = TransactionData::new_programmable(
@@ -402,7 +429,14 @@ impl Client {
         );
 
         trace!("Signing {}...", tx_data.digest());
-        let tx = self.wallet.sign_transaction(&tx_data);
+        Ok(self.wallet.sign_transaction(&tx_data))
+    }
+
+    async fn build_and_execute_transaction_data(
+        &self,
+        pt: ProgrammableTransaction
+    ) -> Result<IotaTransactionBlockResponse> {
+        let tx: Transaction = self.build_and_sign_transaction_data(pt).await?;
 
         trace!("Executing {}...", tx.digest());
         execute_transaction(&self.wallet, tx).await
