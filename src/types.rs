@@ -64,7 +64,7 @@ impl FromIterator<Song> for SongList {
     }
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub(crate) struct Signature {
     pub sig: Vec<Vec<u8>>,
     _index: usize
@@ -124,7 +124,7 @@ impl Signature {
         data: Vec<u8>,
         index: usize
     ) -> bool {
-        assert!(data.len() == TUNO_BASE_CHUNK_SIZE);
+        assert!(data.len() <= TUNO_BASE_CHUNK_SIZE);
 
         let mut hasher = Sha256::new();
         hasher.update(data);

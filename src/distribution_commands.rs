@@ -10,6 +10,7 @@ use crate::server::TunoGrpcServer;
 use crate::client::{Client, Connection};
 use crate::local_storage::{store_song_from_bytes, store_song_from_file};
 use crate::constants::TUNO_BASE_CHUNK_SIZE;
+use crate::types::Signature;
 
 pub mod pb {
     tonic::include_proto!("tuno");
@@ -62,6 +63,9 @@ pub enum DistributionCommands {
         /// Song's object id
         #[arg(long)]
         song: ObjectID,
+
+        #[command(flatten)]
+        conn: Connection
     },
 
     /// Download a song from other distributor
@@ -142,9 +146,19 @@ impl DistributionCommands {
 
             DistributionCommands::Add {
                 file,
-                song
+                song,
+                conn
             } => {
-                // TODO: verify file's signature with on-chain metadata
+
+                let client = Client::new(conn)?;
+                let obj = client.get_song(song).await?;
+
+                if Signature::from(&file) != obj.signature {
+                    println!("File's signature cannot be verified succesfully");
+                    return Ok(());
+                }
+
+                println!("File's signature verified");
                 println!("location: {}", store_song_from_file(&file, &song.to_hex())?.display());
 
                 Ok(())
