@@ -1,8 +1,11 @@
-use iota_sdk::{
-    rpc_types::{IotaExecutionStatus, IotaObjectData, IotaObjectDataFilter, IotaObjectDataOptions, IotaObjectResponse, IotaObjectResponseQuery, IotaTransactionBlockEffectsAPI, IotaTransactionBlockResponse, ObjectChange},
-    types::{base_types::{ObjectID, SequenceNumber}, object::Owner, transaction::Transaction, Identifier, IOTA_FRAMEWORK_PACKAGE_ID},
-    wallet_context::WalletContext
-};
+use iota_sdk::rpc_types::{IotaExecutionStatus, IotaObjectData, IotaObjectDataFilter, IotaObjectDataOptions, IotaObjectResponse, IotaObjectResponseQuery, IotaTransactionBlockEffectsAPI, IotaTransactionBlockResponse, ObjectChange};
+use iota_sdk::types::transaction::{ObjectArg, Transaction};
+use iota_sdk::types::base_types::ObjectID;
+use iota_sdk::types::object::Owner;
+use iota_sdk::types::Identifier;
+use iota_sdk::types::IOTA_FRAMEWORK_PACKAGE_ID;
+use iota_sdk::wallet_context::WalletContext;
+
 use anyhow::{bail, Context, Result};
 use move_core_types::{account_address::AccountAddress, language_storage::StructTag};
 
@@ -66,10 +69,11 @@ fn extract_created_object(
     Ok(*song_id)
 }
 
-pub(crate) async fn get_initial_shared_version(
+pub(crate) async fn get_shared_object_ref(
+    id: ObjectID,
+    mutable: bool,
     wallet: &WalletContext,
-    id: ObjectID
-) -> Result<SequenceNumber> {
+) -> Result<ObjectArg> {
     let response = wallet.get_client().await?
         .read_api()
         .get_object_with_options(
@@ -93,8 +97,8 @@ pub(crate) async fn get_initial_shared_version(
     } = owner else {
         bail!("Object {} is not shared", id);
     };
-    
-    Ok(initial_shared_version)
+
+    Ok(ObjectArg::SharedObject { id, initial_shared_version, mutable })
 }
 
 pub(crate) async fn execute_transaction(

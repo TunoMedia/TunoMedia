@@ -20,7 +20,7 @@ use crate::utils::{
     extract_created_kiosk,
     extract_created_kiosk_cap,
     extract_created_song,
-    get_initial_shared_version,
+    get_shared_object_ref,
     query_kiosk_songs, query_object,
     query_owned_songs
 };
@@ -54,11 +54,7 @@ impl OwnedKiosk {
         ptb: &mut ProgrammableTransactionBuilder
     ) -> Result<Vec<Argument>> {
         Ok(vec![
-            ptb.obj(ObjectArg::SharedObject {
-                id: self.kiosk,
-                initial_shared_version: get_initial_shared_version(wallet, self.kiosk).await?,
-                mutable: true
-            })?,
+            ptb.obj(get_shared_object_ref(self.kiosk, true, wallet).await?)?,
             ptb.obj(ObjectArg::ImmOrOwnedObject(
                 wallet.get_object_ref(self.kiosk_cap).await?
             ))?,
@@ -206,9 +202,7 @@ impl Client {
     ) -> Result<TransactionDigest> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let mut args = vec![
-            ptb.obj(ObjectArg::ImmOrOwnedObject(
-                self.wallet.get_object_ref(song).await?
-            ))?,
+            ptb.obj(get_shared_object_ref(song, true, &self.wallet).await?)?
         ];
         args.append(&mut owned_kiosk.as_arguments(&self.wallet, &mut ptb).await?);
 
@@ -235,9 +229,7 @@ impl Client {
     ) -> Result<TransactionDigest> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let mut args = vec![
-            ptb.obj(ObjectArg::ImmOrOwnedObject(
-                self.wallet.get_object_ref(song).await?
-            ))?,
+            ptb.obj(get_shared_object_ref(song, true, &self.wallet).await?)?
         ];
         args.append(&mut owned_kiosk.as_arguments(&self.wallet, &mut ptb).await?);
 
@@ -284,9 +276,7 @@ impl Client {
     ) -> Result<TransactionDigest> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let args = vec![
-            ptb.obj(ObjectArg::ImmOrOwnedObject(
-                self.wallet.get_object_ref(song).await?
-            ))?,
+            ptb.obj(get_shared_object_ref(song, true, &self.wallet).await?)?,
             ptb.pure(url)?,
             ptb.pure(streaming_price)?
 
@@ -329,9 +319,7 @@ impl Client {
     ) -> Result<TransactionDigest> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let args = vec![
-            ptb.obj(ObjectArg::ImmOrOwnedObject(
-                self.wallet.get_object_ref(song).await?
-            ))?,
+            ptb.obj(get_shared_object_ref(song, true, &self.wallet).await?)?
         ];
 
         ptb.programmable_move_call(
@@ -356,9 +344,7 @@ impl Client {
     ) -> Result<Transaction> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let args = vec![
-            ptb.obj(ObjectArg::ImmOrOwnedObject(
-                self.wallet.get_object_ref(song).await?
-            ))?,
+            ptb.obj(get_shared_object_ref(song, true, &self.wallet).await?)?,
             // TODO: add distributor
             // TODO: add splitted coin with exact amount
         ];
