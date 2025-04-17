@@ -43,7 +43,7 @@ module tuno::creator_tests {
         
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let song = test_scenario::take_from_sender<Song>(&scenario);
+            let song = test_scenario::take_shared<Song>(&scenario);
             let (title, artist, album, year, genre, price, _, _) = tuno::get_song_info(&song);
             
             assert_eq(title, string::utf8(b"Test Song"));
@@ -54,7 +54,7 @@ module tuno::creator_tests {
             assert_eq(price, get_streaming_price());
             assert_eq(tuno::is_available(&song), false);
             
-            test_scenario::return_to_sender(&scenario, song);
+            test_scenario::return_shared(song);
         };
         
         test_scenario::end(scenario);
@@ -69,11 +69,11 @@ module tuno::creator_tests {
         // Verify song is available
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let song = test_scenario::take_from_sender<Song>(&scenario);
+            let song = test_scenario::take_shared<Song>(&scenario);
 
             assert_eq(tuno::is_available(&song), true);
             
-            test_scenario::return_to_sender(&scenario, song);
+            test_scenario::return_shared(song);
         };
         
         // Verify song display is in kiosk
@@ -91,7 +91,7 @@ module tuno::creator_tests {
         // Disable the song
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let mut song = test_scenario::take_from_sender<Song>(&scenario);
+            let mut song = test_scenario::take_shared<Song>(&scenario);
             let mut kiosk = test_scenario::take_shared<Kiosk>(&scenario);
             let cap = test_scenario::take_from_sender<KioskOwnerCap>(&scenario);
             
@@ -99,7 +99,7 @@ module tuno::creator_tests {
             
             assert_eq(tuno::is_available(&song), false);
             
-            test_scenario::return_to_sender(&scenario, song);
+            test_scenario::return_shared(song);
             test_scenario::return_to_sender(&scenario, cap);
             test_scenario::return_shared(kiosk);
         };

@@ -143,7 +143,7 @@ module tuno::tuno {
             streaming_price
         });
 
-        transfer::transfer(song, sender);
+        transfer::share_object(song);
     }
     
     public entry fun make_song_available(

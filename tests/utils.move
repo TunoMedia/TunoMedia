@@ -44,13 +44,13 @@ module tuno::utils {
     public(package) fun place_song_on_kiosk(scenario: &mut Scenario) {
         test_scenario::next_tx(scenario, get_creator());
         {
-            let mut song = test_scenario::take_from_sender<Song>(scenario);
+            let mut song = test_scenario::take_shared<Song>(scenario);
             let mut kiosk = test_scenario::take_shared<Kiosk>(scenario);
             let cap = test_scenario::take_from_sender<KioskOwnerCap>(scenario);
             
             tuno::make_song_available(&mut song, &mut kiosk, &cap, test_scenario::ctx(scenario));
             
-            test_scenario::return_to_sender(scenario, song);
+            test_scenario::return_shared(song);
             test_scenario::return_to_sender(scenario, cap);
             test_scenario::return_shared(kiosk);
         };
@@ -63,7 +63,7 @@ module tuno::utils {
         scenario: &mut Scenario) {
         test_scenario::next_tx(scenario, distributor);
         {
-            let mut song = test_scenario::take_from_address<Song>(scenario, get_creator());
+            let mut song = test_scenario::take_shared<Song>(scenario);
 
             tuno::register_as_distributor(
                 &mut song,
@@ -72,7 +72,7 @@ module tuno::utils {
                 test_scenario::ctx(scenario)
             );
             
-            test_scenario::return_to_address(get_creator(), song);
+            test_scenario::return_shared(song);
         };
     }
 }
