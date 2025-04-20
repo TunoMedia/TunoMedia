@@ -2,6 +2,7 @@
 module tuno::user_tests {
     use iota::coin;
     use std::string;
+    use iota::iota::IOTA;
     use iota::test_scenario;
     use iota::test_utils::assert_eq;
     use tuno::tuno::{Self, Song};
@@ -34,7 +35,7 @@ module tuno::user_tests {
             let total_fee = get_streaming_price() + get_distributor_fee();
             let payment = coin::mint_for_testing(total_fee, test_scenario::ctx(&mut scenario));
             
-            let mut song = test_scenario::take_shared<Song>(&scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             
             let (url, _, fee, _) = tuno::get_distributor_info(&song, get_distributor1());
             assert_eq(url, string::utf8(b"192.168.1.1:8080"));
@@ -48,7 +49,7 @@ module tuno::user_tests {
         // Verify payments received
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let song = test_scenario::take_shared<Song>(&scenario);
+            let song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             
             let (_, _, _, _, _, _, creator_balance, _) = tuno::get_song_info(&song);
             assert_eq(creator_balance, get_streaming_price());

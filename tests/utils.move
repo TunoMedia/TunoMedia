@@ -1,5 +1,6 @@
 #[test_only]
 module tuno::utils {
+    use iota::iota::IOTA;
     use iota::kiosk::{Kiosk, KioskOwnerCap};
     use tuno::tuno::{Self, CreatorCap, Song};
 
@@ -23,7 +24,7 @@ module tuno::utils {
         test_scenario::next_tx(scenario, get_creator());
         {
             let creator_cap = test_scenario::take_from_sender<CreatorCap>(scenario);
-            tuno::create_song(
+            tuno::create_song<IOTA>(
                 b"Test Song",
                 b"Test Artist",
                 b"Test Album",
@@ -44,7 +45,7 @@ module tuno::utils {
     public(package) fun place_song_on_kiosk(scenario: &mut Scenario) {
         test_scenario::next_tx(scenario, get_creator());
         {
-            let mut song = test_scenario::take_shared<Song>(scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(scenario);
             let mut kiosk = test_scenario::take_shared<Kiosk>(scenario);
             let cap = test_scenario::take_from_sender<KioskOwnerCap>(scenario);
             
@@ -63,7 +64,7 @@ module tuno::utils {
         scenario: &mut Scenario) {
         test_scenario::next_tx(scenario, distributor);
         {
-            let mut song = test_scenario::take_shared<Song>(scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(scenario);
 
             tuno::register_as_distributor(
                 &mut song,

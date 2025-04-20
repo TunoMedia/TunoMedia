@@ -1,6 +1,7 @@
 #[test_only]
 module tuno::creator_tests {
     use std::string;
+    use iota::iota::IOTA;
     use iota::test_scenario;
     use iota::test_utils::assert_eq;
     use iota::kiosk::{Self, Kiosk, KioskOwnerCap};
@@ -43,7 +44,7 @@ module tuno::creator_tests {
         
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let song = test_scenario::take_shared<Song>(&scenario);
+            let song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             let (title, artist, album, year, genre, price, _, _) = tuno::get_song_info(&song);
             
             assert_eq(title, string::utf8(b"Test Song"));
@@ -69,7 +70,7 @@ module tuno::creator_tests {
         // Verify song is available
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let song = test_scenario::take_shared<Song>(&scenario);
+            let song = test_scenario::take_shared<Song<IOTA>>(&scenario);
 
             assert_eq(tuno::is_available(&song), true);
             
@@ -91,7 +92,7 @@ module tuno::creator_tests {
         // Disable the song
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let mut song = test_scenario::take_shared<Song>(&scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             let mut kiosk = test_scenario::take_shared<Kiosk>(&scenario);
             let cap = test_scenario::take_from_sender<KioskOwnerCap>(&scenario);
             

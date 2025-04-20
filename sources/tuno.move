@@ -1,6 +1,5 @@
 module tuno::tuno {
     use iota::event;
-    use iota::iota::IOTA;
     use iota::coin::{Self, Coin};
     use std::string::{Self, String};
     use iota::vec_map::{Self, VecMap};
@@ -19,14 +18,14 @@ module tuno::tuno {
     
     // ======== Events ========
 
-    public struct SongCreated has copy, drop {
+    public struct SongCreated<phantom T: drop> has copy, drop {
         id: ID,
         title: String,
         artist: String,
         streaming_price: u64
     }
     
-    public struct SongBecameAvailable has copy, drop {
+    public struct SongBecameAvailable<phantom T: drop> has copy, drop {
         id: ID,
         kiosk_id: ID,
         streaming_price: u64
@@ -37,18 +36,21 @@ module tuno::tuno {
         kiosk_id: ID
     }
     
-    public struct DistributorAdded has copy, drop {
+    public struct DistributorAdded<phantom T: drop> has copy, drop {
         song_id: ID,
         distributor: address,
         url: String,
         streaming_price: u64
     }
 
-    // TODO: DistributorRemoved
+    public struct DistributorRemoved has copy, drop {
+        song_id: ID,
+        distributor: address
+    }
     
     // ======== Objects ========
     
-    public struct Song has key, store {
+    public struct Song<phantom T: drop> has key, store {
         id: UID,
         title: String,
         artist: String,
@@ -61,16 +63,16 @@ module tuno::tuno {
         length: u64,
         duration: u64,
         signature: vector<vector<u8>>,
-        creator_balance: Balance<IOTA>,
-        distributors: VecMap<address, Distributor>,
+        creator_balance: Balance<T>,
+        distributors: VecMap<address, Distributor<T>>,
         display_id: Option<ID>
     }
     
-    public struct Distributor has store {
+    public struct Distributor<phantom T: drop> has store {
         url: String,
         joined_at: u64,
         streaming_price: u64,
-        balance: Balance<IOTA>
+        balance: Balance<T>
     }
     
     public struct CreatorCap has key, store {
@@ -78,7 +80,7 @@ module tuno::tuno {
         creator: address
     }
     
-    public struct SongDisplay has key, store {
+    public struct SongDisplay<phantom T: drop> has key, store {
         id: UID,
         song_id: ID,
         title: String,
@@ -103,7 +105,7 @@ module tuno::tuno {
         transfer::public_transfer(kiosk_cap, tx_context::sender(ctx));
     }
     
-    public entry fun create_song(
+    public entry fun create_song<T: drop>(
         title: vector<u8>,
         artist: vector<u8>,
         album: vector<u8>,
@@ -118,7 +120,7 @@ module tuno::tuno {
         ctx: &mut TxContext
     ) {
         let sender = tx_context::sender(ctx);
-        let song = Song {
+        let song = Song<T> {
             id: object::new(ctx),
             title: string::utf8(title),
             artist: string::utf8(artist),
@@ -136,7 +138,7 @@ module tuno::tuno {
             display_id: option::none()
         };
         
-        event::emit(SongCreated {
+        event::emit(SongCreated<T> {
             id: object::id(&song),
             title: song.title,
             artist: song.artist,
@@ -146,8 +148,8 @@ module tuno::tuno {
         transfer::share_object(song);
     }
     
-    public entry fun make_song_available(
-        song: &mut Song,
+    public entry fun make_song_available<T: drop>(
+        song: &mut Song<T>,
         kiosk: &mut Kiosk,
         cap: &KioskOwnerCap,
         ctx: &mut TxContext
@@ -157,7 +159,7 @@ module tuno::tuno {
         
         assert!(!is_available(song), EAlreadyAvailable);
 
-        let song_display = SongDisplay {
+        let song_display = SongDisplay<T> {
             id: object::new(ctx),
             song_id: object::id(song),
             title: song.title,
@@ -171,15 +173,15 @@ module tuno::tuno {
         
         kiosk::place(kiosk, cap, song_display);
                 
-        event::emit(SongBecameAvailable {
+        event::emit(SongBecameAvailable<T> {
             id: object::id(song),
             kiosk_id: object::id(kiosk),
             streaming_price: song.streaming_price
         });
     }
     
-    public entry fun make_song_unavailable(
-        song: &mut Song,
+    public entry fun make_song_unavailable<T: drop>(
+        song: &mut Song<T>,
         kiosk: &mut Kiosk,
         cap: &KioskOwnerCap,
         ctx: &mut TxContext
@@ -189,7 +191,7 @@ module tuno::tuno {
         
         assert!(is_available(song), ENotAvailable);
         
-        let song_display = kiosk::take<SongDisplay>(kiosk, cap, song.display_id.extract());
+        let song_display = kiosk::take<SongDisplay<T>>(kiosk, cap, song.display_id.extract());
         
         assert!(song_display.song_id == object::id(song), ESongNotInKiosk);
         
@@ -212,8 +214,8 @@ module tuno::tuno {
         });
     }
     
-    public entry fun register_as_distributor(
-        song: &mut Song,
+    public entry fun register_as_distributor<T: drop>(
+        song: &mut Song<T>,
         url: vector<u8>,
         streaming_price: u64,
         ctx: &mut TxContext
@@ -231,7 +233,7 @@ module tuno::tuno {
 
         vec_map::insert(&mut song.distributors, sender, distributor);
         
-        event::emit(DistributorAdded {
+        event::emit(DistributorAdded<T> {
             song_id: object::id(song),
             distributor: sender,
             url: string::utf8(url),
@@ -239,8 +241,8 @@ module tuno::tuno {
         });
     }
     
-    public entry fun update_distributor_info(
-        song: &mut Song,
+    public entry fun update_distributor_info<T: drop>(
+        song: &mut Song<T>,
         url: vector<u8>,
         streaming_price: u64,
         ctx: &mut TxContext
@@ -253,7 +255,7 @@ module tuno::tuno {
         distributor.url = string::utf8(url);
         distributor.streaming_price = streaming_price;
         
-        event::emit(DistributorAdded {
+        event::emit(DistributorAdded<T> {
             song_id: object::id(song),
             distributor: sender,
             url: string::utf8(url),
@@ -261,8 +263,8 @@ module tuno::tuno {
         });
     }
     
-    public entry fun remove_as_distributor(
-        song: &mut Song,
+    public entry fun remove_as_distributor<T: drop>(
+        song: &mut Song<T>,
         ctx: &mut TxContext
     ) {
         let sender = tx_context::sender(ctx);
@@ -279,12 +281,17 @@ module tuno::tuno {
         } = distributor;
         
         balance::destroy_zero(balance);
+
+        event::emit(DistributorRemoved {
+            song_id: object::id(song),
+            distributor: sender
+        });
     }
     
-    public entry fun pay_royalties(
-        song: &mut Song, 
+    public entry fun pay_royalties<T: drop>(
+        song: &mut Song<T>, 
         distributor_addr: address,
-        payment: Coin<IOTA>
+        payment: Coin<T>
     ) {
         assert!(is_available(song), ENotAvailable);
         
@@ -305,8 +312,8 @@ module tuno::tuno {
         balance::destroy_zero(payment_balance);
     }
     
-    public entry fun withdraw_creator_royalties(
-        song: &mut Song,
+    public entry fun withdraw_creator_royalties<T: drop>(
+        song: &mut Song<T>,
         ctx: &mut TxContext
     ) {
         let sender = tx_context::sender(ctx);
@@ -320,8 +327,8 @@ module tuno::tuno {
         transfer::public_transfer(payment, sender);
     }
     
-    public entry fun withdraw_distributor_royalties(
-        song: &mut Song,
+    public entry fun withdraw_distributor_royalties<T: drop>(
+        song: &mut Song<T>,
         ctx: &mut TxContext
     ) {
         let sender = tx_context::sender(ctx);
@@ -341,12 +348,12 @@ module tuno::tuno {
     // ======== View Functions ========
     
     // Get all distributors for a song
-    public fun get_distributors(song: &Song): vector<address> {
+    public fun get_distributors<T: drop>(song: &Song<T>): vector<address> {
         vec_map::keys(&song.distributors)
     }
     
     // Get distributor info for a specific distributor
-    public fun get_distributor_info(song: &Song, distributor: address): (String, u64, u64, u64) {
+    public fun get_distributor_info<T: drop>(song: &Song<T>, distributor: address): (String, u64, u64, u64) {
         let distributor_info = vec_map::get(&song.distributors, &distributor);
         (
             distributor_info.url,
@@ -356,8 +363,8 @@ module tuno::tuno {
         )
     }
     
-    // Get song info including streaming price and creator balance
-    public fun get_song_info(song: &Song): (String, String, String, u64, String, u64, u64, Option<ID>) {
+    // Get song info including streaming price
+    public fun get_song_info<T: drop>(song: &Song<T>): (String, String, String, u64, String, u64, u64, Option<ID>) {
         (
             song.title,
             song.artist,
@@ -371,19 +378,19 @@ module tuno::tuno {
     }
     
     // Get total streaming price (creator + distributor)
-    public fun get_total_price(song: &Song, distributor: address): u64 {
+    public fun get_total_price<T: drop>(song: &Song<T>, distributor: address): u64 {
         assert!(vec_map::contains(&song.distributors, &distributor), ENotDistributor);
         let distributor_info = vec_map::get(&song.distributors, &distributor);
         song.streaming_price + distributor_info.streaming_price
     }
     
     // Check if an address is a distributor for a song
-    public fun is_distributor(song: &Song, distributor: address): bool {
+    public fun is_distributor<T: drop>(song: &Song<T>, distributor: address): bool {
         vec_map::contains(&song.distributors, &distributor)
     }
     
     // Check if a song is currently available
-    public fun is_available(song: &Song): bool {
+    public fun is_available<T: drop>(song: &Song<T>): bool {
         song.display_id.is_some()
     }
 }

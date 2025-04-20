@@ -5,7 +5,7 @@ module tuno::constants {
     const DISTRIBUTOR1: address = @0xD1;
     const DISTRIBUTOR2: address = @0xD2;
 
-    const STREAMING_PRICE: u64 = 1_000_000;
+    const STREAMING_PRICE: u64 = 10_000_000;
     const DISTRIBUTOR_FEE: u64 = 500_000;
 
     public(package) fun get_user(): address {

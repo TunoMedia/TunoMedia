@@ -2,6 +2,7 @@
 module tuno::distributor_tests {
     use iota::coin;
     use std::string;
+    use iota::iota::IOTA;
     use iota::test_scenario;
     use iota::test_utils::assert_eq;
     use tuno::tuno::{Self, Song};
@@ -32,7 +33,7 @@ module tuno::distributor_tests {
         // Check if distributor was registered
         test_scenario::next_tx(&mut scenario, get_distributor1());
         {
-            let song = test_scenario::take_shared<Song>(&scenario);
+            let song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             
             assert_eq(tuno::is_distributor(&song, get_distributor1()), true);
             
@@ -47,7 +48,7 @@ module tuno::distributor_tests {
         // Update distributor info
         test_scenario::next_tx(&mut scenario, get_distributor1());
         {
-            let mut song = test_scenario::take_shared<Song>(&scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             
             tuno::update_distributor_info(
                 &mut song,
@@ -76,7 +77,7 @@ module tuno::distributor_tests {
         // User makes payment for streaming
         test_scenario::next_tx(&mut scenario, get_user());
         {
-            let mut song = test_scenario::take_shared<Song>(&scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             let total_price = tuno::get_total_price(&song, get_distributor1());
             
             let payment = coin::mint_for_testing(total_price, test_scenario::ctx(&mut scenario));
@@ -89,7 +90,7 @@ module tuno::distributor_tests {
         // Creator withdraws royalties
         test_scenario::next_tx(&mut scenario, get_creator());
         {
-            let mut song = test_scenario::take_shared<Song>(&scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             
             let (_, _, _, _, _, _, creator_balance, _) = tuno::get_song_info(&song);
             assert_eq(creator_balance, get_streaming_price());
@@ -107,7 +108,7 @@ module tuno::distributor_tests {
         // Distributor withdraws fees
         test_scenario::next_tx(&mut scenario, get_distributor1());
         {
-            let mut song = test_scenario::take_shared<Song>(&scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             
             let (_, _, _, distributor_balance) = tuno::get_distributor_info(&song, get_distributor1());
             assert_eq(distributor_balance, get_distributor_fee());
@@ -136,7 +137,7 @@ module tuno::distributor_tests {
         // Check second distributor is available
         test_scenario::next_tx(&mut scenario, get_distributor2());
         {
-            let song = test_scenario::take_shared<Song>(&scenario);
+            let song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             
             let distributors = tuno::get_distributors(&song);
             assert_eq(vector::length(&distributors), 2);
@@ -163,7 +164,7 @@ module tuno::distributor_tests {
         // Remove as distributor
         test_scenario::next_tx(&mut scenario, get_distributor1());
         {
-            let mut song = test_scenario::take_shared<Song>(&scenario);
+            let mut song = test_scenario::take_shared<Song<IOTA>>(&scenario);
             
             tuno::remove_as_distributor(&mut song, test_scenario::ctx(&mut scenario));
             
