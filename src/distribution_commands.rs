@@ -92,7 +92,7 @@ impl DistributionCommands {
                     rpc_ip,
                     rpc_port,
                     cert_dir,
-                    conn.package_id
+                    conn.clone()
                 );
 
                 let client = Client::new(conn)?;

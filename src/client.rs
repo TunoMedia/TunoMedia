@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use iota_sdk::rpc_types::{IotaParsedData, IotaTransactionBlockResponse};
+use iota_sdk::rpc_types::{IotaExecutionResult, IotaExecutionStatus, IotaMoveValue, IotaParsedData, IotaTransactionBlockEffectsAPI as _, IotaTransactionBlockResponse};
 use iota_sdk::types::Identifier;
 use iota_sdk::types::digests::TransactionDigest;
-use iota_sdk::types::base_types::{IotaAddress, ObjectID};
+use iota_sdk::types::base_types::{IotaAddress, ObjectID, ObjectRef};
 use iota_sdk::types::programmable_transaction_builder::ProgrammableTransactionBuilder;
-use iota_sdk::types::transaction::{Argument, ObjectArg, ProgrammableTransaction, Transaction, TransactionData};
+use iota_sdk::types::transaction::{Argument, Command, ObjectArg, ProgrammableTransaction, Transaction, TransactionData, TransactionKind};
 use iota_sdk::wallet_context::WalletContext;
 
 use anyhow::{bail, Result};
@@ -14,18 +14,9 @@ use log::{error, info, trace};
 
 use crate::local_storage::{get_all_song_ids, FileMetadata};
 use crate::types::{Song, SongDisplay, SongDisplayList, SongList};
-use crate::utils::{
-    execute_transaction,
-    extract_created_cap,
-    extract_created_kiosk,
-    extract_created_kiosk_cap,
-    extract_created_song,
-    get_shared_object_ref,
-    query_kiosk_songs, query_object,
-    query_owned_songs
-};
+use crate::utils::*;
 
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct Connection {
     /// The IOTA CLI config file, (default: ~/.iota/iota_config/client.yaml)
     #[arg(long)]
@@ -57,7 +48,7 @@ impl OwnedKiosk {
             ptb.obj(get_shared_object_ref(self.kiosk, true, wallet).await?)?,
             ptb.obj(ObjectArg::ImmOrOwnedObject(
                 wallet.get_object_ref(self.kiosk_cap).await?
-            ))?,
+            ))?
         ])
     }
 }
@@ -111,7 +102,8 @@ pub struct CreatorSetup {
 
 pub(crate) struct Client {
     wallet: WalletContext,
-    package_id: ObjectID,
+    pub address: IotaAddress,
+    pub package_id: ObjectID,
 }
 
 impl Client {
@@ -128,8 +120,10 @@ impl Client {
         };
 
         let wallet = WalletContext::new(&config, None, None)?;
+        let address = wallet.active_address()?;
         Ok(Self {
             wallet,
+            address,
             package_id: conn.package_id,
         })
     }
@@ -181,7 +175,7 @@ impl Client {
             self.package_id,
             Identifier::new("tuno").unwrap(),
             Identifier::new("create_song").unwrap(),
-            vec![],
+            vec![get_usdc_type_tag()?],
             args
         );
 
@@ -210,7 +204,7 @@ impl Client {
             self.package_id,
             Identifier::new("tuno").unwrap(),
             Identifier::new("make_song_available").unwrap(),
-            vec![],
+            vec![get_usdc_type_tag()?],
             args
         );
 
@@ -237,7 +231,7 @@ impl Client {
             self.package_id,
             Identifier::new("tuno").unwrap(),
             Identifier::new("make_song_unavailable").unwrap(),
-            vec![],
+            vec![get_usdc_type_tag()?],
             args
         );
 
@@ -286,7 +280,7 @@ impl Client {
             self.package_id,
             Identifier::new("tuno").unwrap(),
             Identifier::new("register_as_distributor").unwrap(),
-            vec![],
+            vec![get_usdc_type_tag()?],
             args
         );
 
@@ -326,7 +320,7 @@ impl Client {
             self.package_id,
             Identifier::new("tuno").unwrap(),
             Identifier::new("remove_as_distributor").unwrap(),
-            vec![],
+            vec![get_usdc_type_tag()?],
             args
         );
 
@@ -342,18 +336,24 @@ impl Client {
         song: ObjectID,
         distributor: &IotaAddress
     ) -> Result<Transaction> {
+        let price = self.get_total_price(song, distributor).await?;
+
         let mut ptb = ProgrammableTransactionBuilder::new();
+        let coin = ptb.obj(ObjectArg::ImmOrOwnedObject(
+            self.get_payment_coin(price).await?
+        ))?;
+        let amounts = vec![ptb.pure(price)?];
         let args = vec![
             ptb.obj(get_shared_object_ref(song, true, &self.wallet).await?)?,
-            // TODO: add distributor
-            // TODO: add splitted coin with exact amount
+            ptb.pure(distributor)?,
+            ptb.command(Command::SplitCoins(coin, amounts))
         ];
 
         ptb.programmable_move_call(
             self.package_id,
             Identifier::new("tuno").unwrap(),
             Identifier::new("pay_royalties").unwrap(),
-            vec![],
+            vec![get_usdc_type_tag()?],
             args
         );
 
@@ -362,6 +362,50 @@ impl Client {
                 ptb.finish()
             ).await?
         )
+    }
+
+    async fn get_total_price(
+        &self,
+        song: ObjectID,
+        distributor: &IotaAddress
+    ) -> Result<usize> {
+        let mut ptb = ProgrammableTransactionBuilder::new();
+        let args = vec![
+            ptb.obj(get_shared_object_ref(song, true, &self.wallet).await?)?,
+            ptb.pure(distributor)?
+        ];
+
+        ptb.programmable_move_call(
+            self.package_id,
+            Identifier::new("tuno").unwrap(),
+            Identifier::new("get_total_price").unwrap(),
+            vec![get_usdc_type_tag()?],
+            args
+        );
+    
+        let dev_inspect_result = self.wallet.get_client().await?
+            .read_api()
+            .dev_inspect_transaction_block(
+                self.address,
+                TransactionKind::programmable(ptb.finish()),
+                None,
+                None,
+                None,
+            ).await?;
+
+        let Some(results) = dev_inspect_result.results else {
+            bail!("Couldn't parse results");
+        };
+
+        let Some(IotaExecutionResult { return_values, .. }) = results.get(0) else {
+            bail!("Couldn't get first result");
+        };
+
+        let Some((res, _)) = return_values.get(0) else {
+            bail!("Couldn't get first return value");
+        };
+
+        Ok(usize::from_le_bytes(res.as_slice().try_into()?))
     }
 
     pub(crate) async fn get_all_owned_songs(&self) -> Result<SongList> {
@@ -400,12 +444,32 @@ impl Client {
         Ok(Song::from(o.fields))
     }
 
+    pub(crate) async fn get_payment_coin(&self, min_amount: usize) -> Result<ObjectRef> {
+        for c in query_usdc_coins(self.address, &self.wallet).await? {
+            let Some(data) = c.data else {
+                continue;
+            };
+
+            let Some(IotaParsedData::MoveObject(o)) = &data.content else {
+                continue;
+            };
+
+            if let Some(IotaMoveValue::String(b)) = o.fields.read_dynamic_field_value("balance") {
+                if b.parse::<usize>().unwrap() >= min_amount {
+                    return Ok(data.object_ref());
+                }
+            }
+        }
+
+        bail!("No coin available")
+    }
+
     pub(crate) async fn build_and_sign_transaction_data(
         &self,
         pt: ProgrammableTransaction
     ) -> Result<Transaction> {
         trace!("building transaction: \n{}", pt.to_string());
-        let sender = self.wallet.active_address()?;
+        let sender = self.address;
         let tx_data = TransactionData::new_programmable(
             sender,
             self.wallet.get_all_gas_objects_owned_by_address(sender).await?,
@@ -425,6 +489,27 @@ impl Client {
         let tx: Transaction = self.build_and_sign_transaction_data(pt).await?;
 
         trace!("Executing {}...", tx.digest());
-        execute_transaction(&self.wallet, tx).await
+        self.execute_transaction(tx).await
     }
+
+    pub(crate) async fn execute_transaction(
+        &self,
+        tx: Transaction
+    ) -> Result<IotaTransactionBlockResponse> {
+        let response = match self.wallet.execute_transaction_may_fail(tx).await {
+            Ok(res) => res,
+            Err(e) => bail!("Error executing tx: {e}")
+        };
+    
+        let Some(effects) = &response.effects else {
+            bail!("Failed to find effects for transaction");
+        };
+    
+        if let IotaExecutionStatus::Failure { error } = effects.status() {
+            bail!("Error {}, executing {}", error.to_owned(), response.digest);
+        }
+    
+        Ok(response)
+    }
+
 }

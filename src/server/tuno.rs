@@ -4,9 +4,9 @@ use tokio::sync::mpsc;
 use tokio_stream::{wrappers::ReceiverStream, Stream};
 use tonic::{Request, Response, Status};
 
-use iota_sdk::types::base_types::ObjectID;
-
-use crate::{local_storage::get_local_song_reader, server::utils::verify_payment};
+use crate::client::Client;
+use crate::local_storage::get_local_song_reader;
+use crate::server::utils::verify_payment;
 
 pub mod pb {
     tonic::include_proto!("tuno");
@@ -15,12 +15,12 @@ pub mod pb {
 }
 
 pub(crate) struct TunoService {
-    package_id: ObjectID
+    client: Client
 }
 
 impl TunoService {
-    pub(crate) fn new(package_id: ObjectID) -> Self {
-        Self { package_id }
+    pub(crate) fn new(client: Client) -> Self {
+        Self { client }
     }
 }
 
@@ -46,13 +46,21 @@ impl pb::tuno_server::Tuno for TunoService {
         &self,
         request: Request<pb::SongRequest>
     ) -> Result<Response<pb::SongBytes>, Status> {
-        let song_id = match verify_payment(request.into_inner().raw_transaction, self.package_id) {
-            Ok(song_id) => song_id,
+        let (
+            song_id,
+            transaction
+        ) = match verify_payment(request.into_inner().raw_transaction, &self.client) {
+            Ok(res) => res,
             Err(e) => {
                 error!("Error verifying tx: {e}");
                 return Err(Status::permission_denied("Transaction could not be verified"));
             }
         };
+
+        if let Err(e) = self.client.execute_transaction(transaction).await {
+            error!("Error executing tx: {e}");
+            return Err(Status::permission_denied("Transaction failed on execution"));
+        }
 
         let mut reader = match get_local_song_reader(&song_id) {
             Ok(reader) => reader,
@@ -85,13 +93,21 @@ impl pb::tuno_server::Tuno for TunoService {
             return Err(Status::invalid_argument("req"));
         };
         
-        let song_id = match verify_payment(raw_transaction, self.package_id) {
-            Ok(song_id) => song_id,
+        let (
+            song_id,
+            transaction
+        ) = match verify_payment(raw_transaction, &self.client) {
+            Ok(res) => res,
             Err(e) => {
                 error!("Error verifying tx: {e}");
                 return Err(Status::permission_denied("Transaction could not be verified"));
             }
         };
+
+        if let Err(e) = self.client.execute_transaction(transaction).await {
+            error!("Error executing tx: {e}");
+            return Err(Status::permission_denied("Transaction failed on execution"));
+        }
 
         let mut reader = match get_local_song_reader(&song_id) {
             Ok(reader) => reader,

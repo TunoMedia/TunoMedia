@@ -1,13 +1,17 @@
-use iota_sdk::rpc_types::{IotaExecutionStatus, IotaObjectData, IotaObjectDataFilter, IotaObjectDataOptions, IotaObjectResponse, IotaObjectResponseQuery, IotaTransactionBlockEffectsAPI, IotaTransactionBlockResponse, ObjectChange};
-use iota_sdk::types::transaction::{ObjectArg, Transaction};
-use iota_sdk::types::base_types::ObjectID;
+use std::str::FromStr as _;
+
+use iota_sdk::rpc_types::{IotaObjectData, IotaObjectDataFilter, IotaObjectDataOptions, IotaObjectResponse, IotaObjectResponseQuery, IotaTransactionBlockResponse, ObjectChange};
+use iota_sdk::types::coin::Coin;
+use iota_sdk::types::transaction::ObjectArg;
+use iota_sdk::types::base_types::{IotaAddress, ObjectID};
 use iota_sdk::types::object::Owner;
-use iota_sdk::types::Identifier;
+use iota_sdk::types::TypeTag;
 use iota_sdk::types::IOTA_FRAMEWORK_PACKAGE_ID;
 use iota_sdk::wallet_context::WalletContext;
 
-use anyhow::{bail, Context, Result};
-use move_core_types::{account_address::AccountAddress, language_storage::StructTag};
+use anyhow::{bail, Result};
+
+use crate::constants::USDC_TYPE_TAG_STR;
 
 pub(crate) fn extract_created_cap(
     resp: &IotaTransactionBlockResponse,
@@ -101,52 +105,29 @@ pub(crate) async fn get_shared_object_ref(
     Ok(ObjectArg::SharedObject { id, initial_shared_version, mutable })
 }
 
-pub(crate) async fn execute_transaction(
-    wallet: &WalletContext,
-    tx: Transaction
-) -> Result<IotaTransactionBlockResponse> {
-    let response = wallet
-        .execute_transaction_may_fail(tx)
-        .await
-        .context("Error executing transaction")?;
-
-    let Some(effects) = &response.effects else {
-        bail!("Failed to find effects for transaction");
-    };
-
-    if let IotaExecutionStatus::Failure { error } = effects.status() {
-        bail!("Error {}, executing {}", error.to_owned(), response.digest);
-    }
-
-    Ok(response)
+pub(crate) async fn query_owned_songs(
+    _wallet: &WalletContext,
+    _package_id: ObjectID
+) -> Result<Vec<IotaObjectResponse>> {
+    todo!("Get all events emited filter by owner")
 }
 
-pub(crate) async fn query_owned_songs(
-    wallet: &WalletContext,
-    package_id: ObjectID
-) -> Result<Vec<IotaObjectResponse>> {
+pub(crate) async fn query_usdc_coins(address: IotaAddress, wallet: &WalletContext) -> Result<Vec<IotaObjectResponse>> {
     let response = wallet.get_client().await?
         .read_api()
         .get_owned_objects(
-            wallet.active_address()?,
+            address,
             IotaObjectResponseQuery {
-                filter: Some(
-                    IotaObjectDataFilter::StructType(
-                        StructTag {
-                            address: AccountAddress::from(package_id),
-                            module: Identifier::new("tuno").unwrap(),
-                            name: Identifier::new("Song").unwrap(),
-                            type_params: vec![]
-                        }
-                    )
-                ),
+                filter: Some(IotaObjectDataFilter::StructType(
+                    Coin::type_(get_usdc_type_tag()?)
+                )),
                 options: Some(IotaObjectDataOptions::new().with_content())
             },
             None,
             None
         ).await?;
+        // TODO: Deal with next page
 
-    // TODO: Deal with next page
     Ok(response.data)
 }
 
@@ -160,7 +141,6 @@ pub(crate) async fn query_kiosk_songs(
         .get_dynamic_fields(kiosk, None, None).await?
         .data;
     // TODO: Deal with next page
-    
 
     let mut displays = vec![];
     for f in fields {
@@ -188,4 +168,8 @@ pub(crate) async fn query_object(
         ).await?;
 
     Ok(response)
+}
+
+pub(crate) fn get_usdc_type_tag() -> Result<TypeTag> {
+    TypeTag::from_str(USDC_TYPE_TAG_STR)
 }

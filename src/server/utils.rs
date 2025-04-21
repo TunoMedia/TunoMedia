@@ -1,7 +1,12 @@
-use iota_sdk::types::{base_types::ObjectID, transaction::{Command, Transaction}};
+use iota_sdk::types::base_types::IotaAddress;
+use iota_sdk::types::supported_protocol_versions::ProtocolConfig;
+use iota_sdk::types::transaction::{Argument, CallArg, Command, Transaction, TransactionKind};
+
 use tonic::transport::{Identity, ServerTlsConfig};
 use std::{fs, path::PathBuf};
 use anyhow::{bail, Result};
+
+use crate::client::Client;
 
 pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<ServerTlsConfig> {
     if !cert_path.exists() {
@@ -22,8 +27,8 @@ pub fn load_tls_config(cert_path: &PathBuf, key_path: &PathBuf) -> Result<Server
 
 pub fn verify_payment(
     raw_transaction: Vec<u8>,
-    package_id: ObjectID
-) -> Result<String> {
+    client: &Client
+) -> Result<(String, Transaction)> {
     let Ok(tx): Result<Transaction, _> = bcs::from_bytes(&raw_transaction) else {
         bail!("Transaction could not be deserialized");
     };
@@ -33,16 +38,18 @@ pub fn verify_payment(
     }
 
     let (kind, _, _) = tx.transaction_data().execution_parts();
-    if !kind.num_commands().eq(&1) {
-        bail!("Transaction contains more than one command");
-    }
+    kind.validity_check(&ProtocolConfig::get_for_min_version())?;
 
-    let Some(Command::MoveCall(call)) = kind.iter_commands().next() else {
-        bail!("Command is not a call");
+    let TransactionKind::ProgrammableTransaction(pt) = kind else {
+        bail!("Transaction does not contain a PTB")
     };
 
-    if !call.package.eq(&package_id) {
-        bail!("Call does not target `{package_id}` as package");
+    let Some(Command::MoveCall(call)) = pt.commands.last() else {
+        bail!("Last command is not a call");
+    };
+
+    if !call.package.eq(&client.package_id) {
+        bail!("Call does not target `{}` as package", client.package_id);
     }
 
     if !call.module.to_string().eq("tuno") {
@@ -53,10 +60,32 @@ pub fn verify_payment(
         bail!("Call does not target `pay_royalties` as function");
     }
 
-    let song = match kind.input_objects() {
-        Ok(objs) if objs.len().eq(&2) => objs[0].object_id(),
-        _ => bail!("Transaction does not contain a correct input")
+    let Some(
+        CallArg::Object(song)
+    ) = get_argument_by_index(&call.arguments, &pt.inputs, 0) else {
+        bail!("Could not parse song's object");
     };
 
-    Ok(song.to_hex())
+    let Some(
+        CallArg::Pure(distributor_bytes)
+    ) = get_argument_by_index(&call.arguments, &pt.inputs, 1) else {
+        bail!("Could not parse distributor");
+    };
+
+    let Ok(distributor) = IotaAddress::from_bytes(distributor_bytes) else {
+        bail!("Could not read distributor's address");
+    };
+
+    if distributor != client.address {
+        bail!("Distributor's address is not correct");
+    }
+
+    Ok((song.id().to_hex(), tx))
+}
+
+fn get_argument_by_index<'a>(args: &'a Vec<Argument>, inputs: &'a Vec<CallArg>, index: usize) -> Option<&'a CallArg> {
+    match args.get(index) {
+        Some(&Argument::Input(i)) => inputs.get(i as usize),
+        _ => None
+    }
 }
