@@ -70,6 +70,17 @@ export ANDROID_HOME="$HOME/Android/Sdk"
 export NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 $ANDROID_HOME/ndk)"
 ```
 
+4. Add the Android targets with rustup:
+
+```bash
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+```
+
+5. Install tauri's CLI:
+```bash
+cargo install tauri-cli --locked
+```
+
 #### Development
 
 Start a development instance:

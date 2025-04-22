@@ -10,34 +10,32 @@
     const get_songs = async () => {
         if (!wallet.client) return
 
-        let result = await wallet.client.queryEvents({
-            query: {
-                MoveEventType: "0xd6eebb11953d91bbc4e5788ab3d1297f9ab4baf52eb2be18449399b08798b6f5::tuno::NFTMinted"
-            }
-        })
-
-        let songs = result.data
-            .map(e => e.parsedJson as SongObject);
+        let songs: String[] = [
+            "7ca86b0d7f598698ecd6d94c5a474d41d122e5876c344f490667d12b9cbe6e63",
+            "7463fa6bbbb2217298255e0dace21e2d00a8116b767fc55d371a08c51dd28573"
+        ]
         
-        songs.forEach(s => player.addNewSong(s));
-        return songs
+        return songs.map(async s => {
+            let res = await fetch(`media/${s}`);
+            let data = await res.json();
+
+            player.addNewSong(data);
+
+            return data.content.fields
+        });
     }
 </script>
 
-<div class="px-4 py-12 sm:px-6 lg:px-8">
-    <ul role="list" class="divide-y divide-gray-100">
+<div class="h-full">
+    <ul class="h-full">
         {#await get_songs() then songs }
             {#if songs}
                 {#each songs as song, index}
-                    <li>
+                    <li class="pb-4 h-[7.5vh]">
                         <SongListing {song} {index} />
                     </li>
                 {/each}
             {/if}
         {/await}
-
-        <li class="gap-x-6 py-5">
-            <AddSongButton />
-        </li>
     </ul>
 </div>

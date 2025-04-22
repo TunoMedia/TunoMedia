@@ -5,24 +5,25 @@
 	import TunoSocketDebugger from '$lib/Player/TunoSocketDebugger.svelte';
 </script>
 
-<div class="grid h-dvh w-dvw grid-rows-[10]">
+
+<div class="font-inter font-feature-default antialiased">
     {#if import.meta.env.MODE === "development"}
-        <div class="row-span-3 bg-green-300 content-center">
+        <div class="row-span-3 bg-green-300 content-center p-4">
             <TunoSocketDebugger />
         </div>
     {/if}
 
-    <div class="row-span-1">
-        <Header />
-    </div>
-    <div class="row-span-8 overflow-x-hidden overflow-y-scroll">
-        <Content />
-    </div>
-    <div class="row-span-1">
-        <Footer />
+    <div class="h-dvh w-dvw">
+        <div class="h-[77%] p-4 bg-gradient-to-b from-sky-300 to-neutral-950">
+            <div class="h-[15%]">
+                <Header />
+            </div>
+            <div class="h-[85%] overflow-x-hidden custom-scrollbar overflow-y-scroll">
+                <Content />
+            </div>
+        </div>
+        <div class="h-[23%]">
+            <Footer />
+        </div>
     </div>
 </div>
-
-
-
-

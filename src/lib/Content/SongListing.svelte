@@ -5,26 +5,31 @@
     let player = getMusicPlayerContext();
 </script>
 
-<div class="group flex justify-between gap-x-6 py-5 rounded-3xl {player.songPlayingIndex === index ? "bg-indigo-300" : "hover:bg-indigo-100"}">
-    <div class="flex min-w-0 gap-x-4 ml-4">
-        <div class="min-w-0 flex-auto">
-            <p class="text-sm/6 font-semibold text-gray-900">{song.name}</p>
-            <p class="mt-1 truncate text-xs/5 text-gray-500">{song.author}</p>
+{#await song}
+    wait
+{:then fields} 
+    <div class="h-full flex bg-white rounded-r-full">
+        <div class="h-full flex-none relative">
+            <img src={fields.cover_art_url} class="h-full" alt="{fields.title}'s cover art"/>
+            <div class="absolute inset-0 bg-white rounded-full p-3 cursor-pointer">
+                <svg width="100%" height="100%" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="8,5 8,19 19,12" fill="black"/>
+                </svg>
+            </div>
+        </div>
+        <div class="grow px-2 min-w-0 ">
+            <div class="h-full flex justify-between items-center">
+                <div class="min-w-0 mr-2">
+                    <p class="text-xs/4 font-semibold text-gray-900 truncate">{fields.title}</p>
+                    <p class="text-xs/4 text-gray-500 truncate">{fields.artist}</p>
+                </div>
+                <div class="flex">
+                    <span class="text-xs/5 m-auto">{fields.duration}</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex-none">
+            <img src={fields.cover_art_url} class="h-full rounded-full" alt="{fields.title}'s cover art"/>
         </div>
     </div>
-    <div>
-    </div>
-    <div class="{player.songPlayingIndex === index ? "flex" : "hidden group-hover:flex"} min-w-0 gap-x-4 mr-4">
-        <button aria-label="play" onclick={() => player.togglePlayingSelectedSong(index)}>
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                {#if player.isPlaying && player.songPlayingIndex === index}
-                    <rect x="6" y="4" width="4" height="16"></rect>
-                    <rect x="14" y="4" width="4" height="16"></rect>
-                {:else}
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                {/if}
-            </svg>
-        </button>
-    </div>
-
-</div>
+{/await}
