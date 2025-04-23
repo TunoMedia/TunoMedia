@@ -103,6 +103,6 @@ npx protoc \
 --ts_out src/lib/proto \
 --ts_opt long_type_string \
 --ts_opt optimize_code_size \
---proto_path tuno/proto \
-tuno/proto/tuno.proto
+--proto_path ../proto \
+../proto/tuno.proto
 ```

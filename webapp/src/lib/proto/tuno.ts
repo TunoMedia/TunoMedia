@@ -26,18 +26,18 @@ export interface EchoResponse {
  */
 export interface SongRequest {
     /**
-     * @generated from protobuf field: string object_id = 1;
+     * @generated from protobuf field: bytes raw_transaction = 1;
      */
-    objectId: string;
+    rawTransaction: Uint8Array;
 }
 /**
  * @generated from protobuf message tuno.SongStreamRequest
  */
 export interface SongStreamRequest {
     /**
-     * @generated from protobuf field: string object_id = 1;
+     * @generated from protobuf field: tuno.SongRequest req = 1;
      */
-    objectId: string;
+    req?: SongRequest;
     /**
      * @generated from protobuf field: uint32 block_size = 2;
      */
@@ -80,7 +80,7 @@ export const EchoResponse = new EchoResponse$Type();
 class SongRequest$Type extends MessageType<SongRequest> {
     constructor() {
         super("tuno.SongRequest", [
-            { no: 1, name: "object_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "raw_transaction", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
         ]);
     }
 }
@@ -92,7 +92,7 @@ export const SongRequest = new SongRequest$Type();
 class SongStreamRequest$Type extends MessageType<SongStreamRequest> {
     constructor() {
         super("tuno.SongStreamRequest", [
-            { no: 1, name: "object_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 1, name: "req", kind: "message", T: () => SongRequest },
             { no: 2, name: "block_size", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }

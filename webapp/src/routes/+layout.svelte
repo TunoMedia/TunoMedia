@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { setWalletProviderContext } from '$lib/Wallet/WalletProviderContext.svelte';
+	import { setIotaClientContext } from '$lib/Wallet/IotaClientContext.svelte';
 	import { setMusicPlayerContext } from '$lib/Player/MusicPlayer.svelte';
 	import '../app.css';
 
 	let { children } = $props();
 
-	setWalletProviderContext();
+	setIotaClientContext();
 	setMusicPlayerContext();
 </script>
 
