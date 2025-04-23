@@ -1,0 +1,29 @@
+syntax = "proto3";
+package tuno;
+
+service Tuno {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc FetchSong(SongRequest) returns (SongBytes);
+  rpc StreamSong(SongStreamRequest) returns (stream SongBytes);
+}
+
+message EchoRequest {
+  string message = 1;
+}
+
+message EchoResponse {
+  string message = 1;
+}
+
+message SongRequest {
+  bytes raw_transaction = 1;
+}
+
+message SongStreamRequest {
+  SongRequest req = 1;
+  uint32 block_size = 2;
+}
+
+message SongBytes {
+  bytes data = 1;
+}
