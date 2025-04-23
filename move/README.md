@@ -11,11 +11,3 @@ Smart Contracts behind the Tuno Media platform
 ```sh
 iota client publish
 ```
-
-### Mint NFT
-```sh
-iota client ptb \
---move-call $PACKAGE_ID::tuno::mint '"<NAME>"' '"<AUTHOR>"' \
---assign nft \
---transfer-objects "[nft]" @$MY_ADDRESS
-```
