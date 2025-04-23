@@ -1,14 +1,18 @@
 <script lang="ts">
-    import AddSongButton from './AddSongButton.svelte';
     import SongListing from './SongListing.svelte';
-    import { getMusicPlayerContext, type SongObject } from '$lib/Player/MusicPlayer.svelte';
-    import { getWalletProviderContext } from '$lib/Wallet/WalletProviderContext.svelte';
+    import { getMusicPlayerContext } from '$lib/Player/MusicPlayer.svelte';
+    import { getIotaClientContext } from '$lib/Wallet/IotaClientContext.svelte';
 
     let player = getMusicPlayerContext();
-    let wallet = getWalletProviderContext();
+    let iotaClient = getIotaClientContext();
 
     const get_songs = async () => {
-        if (!wallet.client) return
+
+        let bal = await iotaClient.getBalance({
+            owner: "0xe440ce93dbef136eb841f55cc50b198e8cb80ba8de9b379f85ed86827b1a4644",
+        });
+
+        console.log(bal);
 
         let songs: String[] = [
             "7ca86b0d7f598698ecd6d94c5a474d41d122e5876c344f490667d12b9cbe6e63",
@@ -26,16 +30,19 @@
     }
 </script>
 
-<div class="h-full">
-    <ul class="h-full">
+<div class="min-h-full pt-6 px-6 rounded-tr-[50px] bg-white">
+    <ul>
         {#await get_songs() then songs }
             {#if songs}
                 {#each songs as song, index}
-                    <li class="pb-4 h-[7.5vh]">
+                    <li class="pb-4 h-16">
                         <SongListing {song} {index} />
                     </li>
+                    
                 {/each}
             {/if}
         {/await}
     </ul>
+
+    <div class="h-[23vh]"></div>
 </div>

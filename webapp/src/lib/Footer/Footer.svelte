@@ -5,7 +5,7 @@
 </script>
 
 <div class="h-full relative overflow-y-hidden">
-    <img class="w-full" src="https://upload.wikimedia.org/wikipedia/en/4/42/Beatles_-_Abbey_Road.jpg" alt="Song's cover art" />
+    <img class="w-full rounded-tl-[90px]" src="https://upload.wikimedia.org/wikipedia/en/4/42/Beatles_-_Abbey_Road.jpg" alt="Song's cover art" />
     <div class="absolute h-full inset-3 p-3">
         <div class="h-full rounded-t-full bg-black relative"></div>
     </div>

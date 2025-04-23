@@ -8,7 +8,7 @@
 {#await song}
     wait
 {:then fields} 
-    <div class="h-full flex bg-white rounded-r-full">
+    <div class="h-full flex bg-white rounded-r-full drop-shadow-[0_3px_3px_rgba(0,0,0,0.25)]">
         <div class="h-full flex-none relative">
             <img src={fields.cover_art_url} class="h-full" alt="{fields.title}'s cover art"/>
             <div class="absolute inset-0 bg-white rounded-full p-3 cursor-pointer">
