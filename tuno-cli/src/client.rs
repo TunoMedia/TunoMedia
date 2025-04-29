@@ -20,7 +20,7 @@ use crate::utils::*;
 pub struct Connection {
     /// The IOTA CLI config file, (default: ~/.iota/iota_config/client.yaml)
     #[arg(long)]
-    config: Option<PathBuf>,
+    pub config: Option<PathBuf>,
 
     /// Object ID of the game's package.
     #[arg(long, short, env = "PKG")]
@@ -100,14 +100,14 @@ pub struct CreatorSetup {
     pub kiosk_cap: ObjectID
 }
 
-pub(crate) struct Client {
+pub struct Client {
     wallet: WalletContext,
     pub address: IotaAddress,
     pub package_id: ObjectID,
 }
 
 impl Client {
-    pub(crate) fn new(conn: Connection) -> Result<Self> {
+    pub fn new(conn: Connection) -> Result<Self> {
         let Some(config) = conn.config.or_else(|| {
             let mut default = dirs::home_dir()?;
             default.extend([".iota", "iota_config", "client.yaml"]);
@@ -432,7 +432,7 @@ impl Client {
         Ok(songs)
     }
 
-    pub(crate) async fn get_song(&self, song: ObjectID) -> Result<Song> {
+    pub async fn get_song(&self, song: ObjectID) -> Result<Song> {
         let Some(data) = query_object(&self.wallet, song).await?.data else {
             bail!("Song's data could not be found");
         };

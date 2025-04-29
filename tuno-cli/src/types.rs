@@ -65,7 +65,7 @@ impl FromIterator<Song> for SongList {
 }
 
 #[derive(PartialEq, Debug)]
-pub(crate) struct TunoSignature {
+pub struct TunoSignature {
     pub sig: Vec<Vec<u8>>,
     _index: usize
 }
