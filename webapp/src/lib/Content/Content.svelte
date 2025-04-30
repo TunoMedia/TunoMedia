@@ -30,12 +30,12 @@
     }
 </script>
 
-<div class="min-h-full pt-6 px-6 rounded-tr-[50px] bg-white">
+<div class="min-h-full pt-8 md:pt-16 px-6 md:px-16 rounded-tr-[50px] md:rounded-tr-[100px] bg-white">
     <ul>
         {#await get_songs() then songs }
             {#if songs}
                 {#each songs as song, index}
-                    <li class="pb-4 h-16">
+                    <li class="pb-4 h-[4.5rem] md:h-[5rem]">
                         <SongListing {song} {index} />
                     </li>
                     
