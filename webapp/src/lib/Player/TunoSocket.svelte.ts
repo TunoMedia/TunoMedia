@@ -4,7 +4,7 @@ import { TunoClient } from "$lib/proto/tuno.client";
 export class TunoSocket {
     #client: TunoClient | null = null
 
-    constructor(baseUrl: string = "https://tuno.media:4114") {
+    constructor(baseUrl: any = "https://tuno.media:4114") {
         this.#client = new TunoClient(
             new GrpcWebFetchTransport({
                 baseUrl,
@@ -20,17 +20,20 @@ export class TunoSocket {
         return response.message;
     }
 
-    async fetchSong(objectId: string): Promise<Uint8Array> {
+    async fetchSong(rawTransaction: string): Promise<Uint8Array> {
         if (!this.#client) return Promise.reject("no gRPC client available");
 
-        let { response } = await this.#client.fetchSong({ objectId });
+        let { response } = await this.#client.fetchSong({ rawTransaction });
         return response.data;
     }
 
-    async* streamSong(objectId: string): AsyncGenerator<Uint8Array> {
+    async* streamSong(rawTransaction: string): AsyncGenerator<Uint8Array> {
         if (!this.#client) return Promise.reject("no gRPC client available");
 
-        let streamingCall = this.#client.streamSong({ objectId, blockSize: 1024*512 });
+        let streamingCall = this.#client.streamSong({
+            rawTransaction,
+            blockSize: 4 * 512 * 512
+        });
 
         try {
             for await (let response of streamingCall.responses) {

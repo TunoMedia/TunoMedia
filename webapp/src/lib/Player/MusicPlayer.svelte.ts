@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core';
+
 import { getContext, setContext } from "svelte";
 import { TunoSocket } from "./TunoSocket.svelte";
 
@@ -8,9 +10,10 @@ export type SongObject = {
 }
 
 export class MusicPlayer {
-	#songs: SongObject[] = [];
+	#songs: any[] = $state([]);
     isPlaying: boolean = $state(false);
 	songPlayingIndex = $state(0);
+    activeSong = $derived(this.#songs[this.songPlayingIndex])
 
     #socket: TunoSocket = new TunoSocket();
     #audio: HTMLAudioElement;
@@ -54,15 +57,23 @@ export class MusicPlayer {
     async loadSong() {
         this.#resetMediaSource();
 
+        let songId = this.activeSong.objectId;
+        let resp = await invoke("get_distributor", { songId })
+            .catch((error) => console.error(error));
+
+        if (!resp) return
+        let [ url, tx ] = resp as [string, string];
+
+        this.#socket = new TunoSocket(url)
+
         try {
-            let streamCall = this.#socket.streamSong(this.#songs[this.songPlayingIndex].object_id);
+            let streamCall = this.#socket.streamSong(tx);
 
             let index = 0;
             for await (let buf of streamCall) {
                 if (!this.#sourceBuffer) return console.error("sourceBuffer do not exist");
 
                 let update = new Promise(res => this.#sourceBuffer!.addEventListener("updateend", res));
-
                 this.#sourceBuffer.appendBuffer(buf)
 
                 await update;
@@ -94,7 +105,7 @@ export class MusicPlayer {
         if (this.songPlayingIndex != index) {
             this.songPlayingIndex = index
             this.isPlaying = false
-            this.loadSong()
+            await this.loadSong()
         }
 
         this.togglePlaying()

@@ -331,7 +331,7 @@ impl Client {
         )
     }
 
-    pub(crate) async fn get_payment_transaction(
+    pub async fn get_payment_transaction(
         &self,
         song: ObjectID,
         distributor: &IotaAddress

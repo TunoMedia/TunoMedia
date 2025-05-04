@@ -183,7 +183,7 @@ impl DistributionCommands {
 
                 let mut stream = channel.stream_song(
                     pb::SongStreamRequest {
-                        req: Some(pb::SongRequest { raw_transaction: bcs::to_bytes(&tx)? }),
+                        raw_transaction: hex::encode(bcs::to_bytes(&tx)?),
                         block_size: 4 * TUNO_BASE_CHUNK_SIZE as u32,
                     }
                 ).await?

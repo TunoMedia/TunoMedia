@@ -15,13 +15,14 @@ message EchoResponse {
   string message = 1;
 }
 
+// https://forum.heroiclabs.com/t/cannot-send-uint8array-to-client/2834/4
 message SongRequest {
-  bytes raw_transaction = 1;
+  string raw_transaction = 1;
 }
 
 message SongStreamRequest {
-  SongRequest req = 1;
-  uint32 block_size = 2;
+  uint32 block_size = 1;
+  string raw_transaction = 2;
 }
 
 message SongBytes {

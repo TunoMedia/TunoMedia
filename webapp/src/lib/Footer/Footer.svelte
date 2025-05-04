@@ -5,26 +5,26 @@
 </script>
 
 <div class="h-full relative overflow-y-hidden">
-    <img class="w-full rounded-tl-[90px]" src="https://upload.wikimedia.org/wikipedia/en/4/42/Beatles_-_Abbey_Road.jpg" alt="Song's cover art" />
+    <img class="w-full rounded-tl-[90px]" src={player.activeSong?.content.fields.cover_art_url} alt="Song's cover art" />
     <div class="absolute h-full inset-3 p-3">
         <div class="h-full rounded-t-full bg-black relative"></div>
     </div>
 
     <div class="absolute inset-0 p-3">
-        <p class="text-white text-xs/4 font-semibold text-right">Abbey Road</p>
+        <p class="text-white text-xs/4 font-semibold text-right">{player.activeSong?.content.fields.album}</p>
     </div>
 
     <div class="h-full w-full absolute inset-0">
         <div class="h-[27.5%] flex justify-center">
-            <img src="https://static.lingq.com/media/resources/collections/images/2019/12/13/abb284a34d_ea2GDnV.jpg" class="h-full rounded-full" alt="Artist icon" />
+            <!-- <img src="usericon.jpeg" class="h-full rounded-full" alt="Artist icon" /> -->
         </div>
 
         <div>
             <div class="flex justify-center pt-1">
-                <p class="text-white text-xs/4">The Beatles</p>
+                <p class="text-white text-xs/4">{player.activeSong?.content.fields.artist}</p>
             </div>
             <div class="flex justify-center">
-                <p class="text-white text-s/4 font-semibold">Here Comes the Sun</p>
+                <p class="text-white text-s/4 font-semibold">{player.activeSong?.content.fields.title}</p>
             </div>
 
             <div class="flex justify-center gap-6 pt-2">

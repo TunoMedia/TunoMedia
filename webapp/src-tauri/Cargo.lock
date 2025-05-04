@@ -276,6 +276,8 @@ dependencies = [
 name = "app"
 version = "0.1.0"
 dependencies = [
+ "bcs",
+ "hex",
  "iota-sdk 0.13.0-alpha",
  "log",
  "serde",
@@ -9926,6 +9928,7 @@ dependencies = [
  "dirs 6.0.0",
  "dotenv",
  "env_logger",
+ "hex",
  "iota-sdk 0.13.0-alpha",
  "log",
  "move-core-types",

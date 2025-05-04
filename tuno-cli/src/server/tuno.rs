@@ -46,10 +46,15 @@ impl pb::tuno_server::Tuno for TunoService {
         &self,
         request: Request<pb::SongRequest>
     ) -> Result<Response<pb::SongBytes>, Status> {
+        let Ok(raw_transaction) = hex::decode(request.into_inner().raw_transaction) else {
+            error!("Error decoding raw_transaction");
+            return Err(Status::permission_denied("Error decoding raw_transaction"));
+        };
+
         let (
             song_id,
             transaction
-        ) = match verify_payment(request.into_inner().raw_transaction, &self.client) {
+        ) = match verify_payment(raw_transaction, &self.client) {
             Ok(res) => res,
             Err(e) => {
                 error!("Error verifying tx: {e}");
@@ -88,9 +93,9 @@ impl pb::tuno_server::Tuno for TunoService {
         request: Request<pb::SongStreamRequest>
     ) -> Result<Response<Self::StreamSongStream>, Status> {
         let song_stream_request = request.into_inner();
-        let Some(pb::SongRequest { raw_transaction }) = song_stream_request.req else {
-            error!("req parameter not found");
-            return Err(Status::invalid_argument("req"));
+        let Ok(raw_transaction) = hex::decode(song_stream_request.raw_transaction) else {
+            error!("Error decoding raw_transaction");
+            return Err(Status::permission_denied("Error decoding raw_transaction"));
         };
         
         let (

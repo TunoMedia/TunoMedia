@@ -203,10 +203,16 @@ impl From<IotaMoveStruct> for DistributionMap {
     }
 }
 
+impl DistributionMap {
+    pub fn get_first(&self) -> Option<(&IotaAddress, &Distributor)> {
+        self.0.first_key_value()
+    }
+}
+
 fn parse_uid(s: &IotaMoveStruct, field_name: &str) -> ObjectID {
     match s.read_dynamic_field_value(field_name) {
         Some(IotaMoveValue::UID { id }) => id,
-        _ => panic!("Error parsing {field_name} from {s}")
+        _ => panic!("Error parsSing {field_name} from {s}")
     }
 }
 

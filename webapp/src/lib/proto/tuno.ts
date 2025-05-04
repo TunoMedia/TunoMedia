@@ -26,22 +26,22 @@ export interface EchoResponse {
  */
 export interface SongRequest {
     /**
-     * @generated from protobuf field: bytes raw_transaction = 1;
+     * @generated from protobuf field: string raw_transaction = 1;
      */
-    rawTransaction: Uint8Array;
+    rawTransaction: string;
 }
 /**
  * @generated from protobuf message tuno.SongStreamRequest
  */
 export interface SongStreamRequest {
     /**
-     * @generated from protobuf field: tuno.SongRequest req = 1;
-     */
-    req?: SongRequest;
-    /**
-     * @generated from protobuf field: uint32 block_size = 2;
+     * @generated from protobuf field: uint32 block_size = 1;
      */
     blockSize: number;
+    /**
+     * @generated from protobuf field: string raw_transaction = 2;
+     */
+    rawTransaction: string;
 }
 /**
  * @generated from protobuf message tuno.SongBytes
@@ -80,7 +80,7 @@ export const EchoResponse = new EchoResponse$Type();
 class SongRequest$Type extends MessageType<SongRequest> {
     constructor() {
         super("tuno.SongRequest", [
-            { no: 1, name: "raw_transaction", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+            { no: 1, name: "raw_transaction", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
 }
@@ -92,8 +92,8 @@ export const SongRequest = new SongRequest$Type();
 class SongStreamRequest$Type extends MessageType<SongStreamRequest> {
     constructor() {
         super("tuno.SongStreamRequest", [
-            { no: 1, name: "req", kind: "message", T: () => SongRequest },
-            { no: 2, name: "block_size", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "block_size", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "raw_transaction", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
 }

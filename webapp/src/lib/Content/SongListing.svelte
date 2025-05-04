@@ -40,7 +40,7 @@
                     </svg>
                 </div>
         </div>
-        <div class="grow px-2 min-w-0 ">
+        <div class="grow h-full px-2 min-w-0">
             <div class="h-full flex justify-between items-center">
                 <div class="min-w-0 mr-2 text-left">
                     <p class="text-xs/4 font-semibold {selected ? "text-gray-100" : "text-gray-900 group-hover:text-gray-100"} truncate">{fields.title}</p>
@@ -51,7 +51,7 @@
                 </div>
             </div>
         </div>
-        <div class="flex-none">
+        <div class="flex-none h-full">
             <img 
                 src={fields.cover_art_url} 
                 class="h-full rounded-full album-cover {active ? 'playing' : ''}" 
